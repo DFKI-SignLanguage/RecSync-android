@@ -84,6 +84,7 @@ import java.util.stream.Collectors;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import io.javalin.Javalin;
 
 /**
  * Main activity for the libsoftwaresync demo app using the camera 2 API.
@@ -223,9 +224,27 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         Log.v(TAG, "onCreate");
         periodCalculator = new PeriodCalculator();
-        checkPermissions();
+        //checkPermissions();
+        permissionsGranted = true;
         if (permissionsGranted) {
             onCreateWithPermission();
+            Log.i(TAG, "Starting websocket");
+            Javalin jwsObj = Javalin.create().start(7867);
+            jwsObj.ws("/remotecon", ws -> {
+                ws.onConnect(ctx -> {
+                    Log.i(TAG, "web socket connection established");
+                });
+                ws.onClose(ctx -> {
+                    Log.i(TAG, "web socket connection closed");
+                });
+                ws.onMessage(ctx -> {
+                    Log.i(TAG, "web socket recieved a msg");
+                });
+                ws.onError(ctx -> {
+                    Log.i(TAG, "web socket error");
+                });
+
+            });
         } else {
             // Wait for user to finish permissions before setting up the app.
         }
