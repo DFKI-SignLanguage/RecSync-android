@@ -82,9 +82,11 @@ import java.util.Locale;
 import java.util.concurrent.FutureTask;
 import java.util.stream.Collectors;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 import io.javalin.Javalin;
+import io.javalin.websocket.WsMessageContext;
 
 /**
  * Main activity for the libsoftwaresync demo app using the camera 2 API.
@@ -228,27 +230,13 @@ public class MainActivity extends Activity {
         permissionsGranted = true;
         if (permissionsGranted) {
             onCreateWithPermission();
-            Log.i(TAG, "Starting websocket");
-            Javalin jwsObj = Javalin.create().start(7867);
-            jwsObj.ws("/remotecon", ws -> {
-                ws.onConnect(ctx -> {
-                    Log.i(TAG, "web socket connection established");
-                });
-                ws.onClose(ctx -> {
-                    Log.i(TAG, "web socket connection closed");
-                });
-                ws.onMessage(ctx -> {
-                    Log.i(TAG, "web socket recieved a msg");
-                });
-                ws.onError(ctx -> {
-                    Log.i(TAG, "web socket error");
-                });
 
-            });
         } else {
             // Wait for user to finish permissions before setting up the app.
         }
+
     }
+
 
     private void onCreateWithPermission() {
         setContentView(R.layout.activity_main);
@@ -343,6 +331,47 @@ public class MainActivity extends Activity {
         surfaceView.setVisibility(View.VISIBLE);
 
         startCameraThread();
+        softwareSyncController =
+                new SoftwareSyncController(this, phaseAlignController, softwaresyncStatusTextView);
+        if(softwareSyncController.isLeader()) {
+            Toast.makeText(this, "Starting websocket", Toast.LENGTH_LONG).show();
+            Javalin jwsObj = Javalin.create().start(7867);
+            jwsObj.ws("/remotecon", ws -> {
+                ws.onConnect(ctx -> {
+                    Log.i(TAG, "web socket connection established");
+                });
+                ws.onClose(ctx -> {
+                    Log.i(TAG, "web socket connection closed");
+                });
+                ws.onMessage(this::handleWebSocketMsg);
+                ws.onError(ctx -> {
+                    Log.i(TAG, "web socket error");
+                });
+
+            });
+        }
+
+
+    }
+    private void handleWebSocketMsg(@NotNull WsMessageContext wsMessageContext){
+        String command = wsMessageContext.message();
+        Log.i(TAG,"handling the message");
+        switch(command){
+            case "START":
+                startVideo(false);
+                ((SoftwareSyncLeader) softwareSyncController.softwareSync)
+                        .broadcastRpc(
+                                SoftwareSyncController.METHOD_START_RECORDING,
+                                "0");
+                break;
+            case "STOP":
+                stopVideo();
+                ((SoftwareSyncLeader) softwareSyncController.softwareSync)
+                        .broadcastRpc(
+                                SoftwareSyncController.METHOD_STOP_RECORDING,
+                                "0");
+                break;
+        }
     }
 
     @Override
@@ -465,6 +494,7 @@ public class MainActivity extends Activity {
                                     .broadcastRpc(
                                             SoftwareSyncController.METHOD_START_RECORDING,
                                             "0");
+                            Log.i(TAG, "Click event triggered");
                         }
 
 /*            if (cameraController.getOutputSurfaces().isEmpty()) {
@@ -957,7 +987,6 @@ public class MainActivity extends Activity {
 //    // External sdcard file location
 //    File mediaStorageDir = new File(Environment.getExternalStorageDirectory(),
 //            "MROB_VID");
-//    // Create storage directory if it does not exist
 //    if (!mediaStorageDir.exists()) {
 //      if (!mediaStorageDir.mkdirs()) {
 //        Log.d(TAG, "Oops! Failed create "
@@ -1030,10 +1059,12 @@ public class MainActivity extends Activity {
 
     public void startVideo(boolean wantAutoExp) {
         Log.d(TAG, "Starting video.");
-        Toast.makeText(this, "Started recording video", Toast.LENGTH_LONG).show();
+        //Toast.makeText(this, "Started recording video", Toast.LENGTH_LONG).show();
 
         isVideoRecording = true;
         try {
+
+            Log.d(TAG, "Starting video after toast.");
             mediaRecorder = setUpMediaRecorder(surface);
             String filename = lastTimeStamp + ".csv";
             // Creates frame timestamps logger
@@ -1072,7 +1103,7 @@ public class MainActivity extends Activity {
     public void stopVideo() {
         // Switch to preview again
 
-        Toast.makeText(this, "Stopped recording video", Toast.LENGTH_LONG).show();
+        //Toast.makeText(this, "Stopped recording video", Toast.LENGTH_LONG).show();
         startPreview();
     }
 

@@ -23,17 +23,18 @@ class RemoteController(object):
         self.ws.send("START")
     
     def stopBtn(self):
-        pass
-    
+        self.label.setText('Stop Recording')
+        self.ws.send("STOP")
     def statusBtn(self):
-        pass
+        self.ws.send("STATUS")
 
     def downloadBtn(self):
-        pass
+        self.ws.send("")
 
     def setupUi(self, MainWindow):
         self.ws = websocket.WebSocket()
-        self.ws.connect("ws://172.16.62.107:7867/remotecon")
+        #self.ws.connect("ws://172.16.62.107:7867/remotecon")
+        self.ws.connect("ws://192.168.5.2:7867/remotecon")
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(800, 600)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
@@ -47,24 +48,15 @@ class RemoteController(object):
         self.label.setObjectName("label")
         self.start_btn = QtWidgets.QPushButton(self.centralwidget)
         self.start_btn.setGeometry(QtCore.QRect(130, 90, 161, 61))
-        font = QtGui.QFont()
-        font.setFamily("Source Sans Pro")
-        font.setPointSize(21)
         self.start_btn.setFont(font)
         self.start_btn.setObjectName("pushButton")
         self.stop_btn = QtWidgets.QPushButton(self.centralwidget)
         self.stop_btn.setGeometry(QtCore.QRect(430, 90, 161, 61))
         self.start_btn.clicked.connect(self.startBtn)
-        font = QtGui.QFont()
-        font.setFamily("Source Sans Pro")
-        font.setPointSize(21)
         self.stop_btn.setFont(font)
         self.stop_btn.setObjectName("pushButton_2")
         self.status_btn = QtWidgets.QPushButton(self.centralwidget)
         self.status_btn.setGeometry(QtCore.QRect(280, 300, 161, 61))
-        font = QtGui.QFont()
-        font.setFamily("Source Sans Pro")
-        font.setPointSize(21)
         self.status_btn.setFont(font)
         self.status_btn.setObjectName("pushButton_3")
         self.api_input = QtWidgets.QTextEdit(self.centralwidget)
@@ -72,9 +64,6 @@ class RemoteController(object):
         self.api_input.setObjectName("textEdit")
         self.download_btn = QtWidgets.QPushButton(self.centralwidget)
         self.download_btn.setGeometry(QtCore.QRect(280, 450, 161, 61))
-        font = QtGui.QFont()
-        font.setFamily("Source Sans Pro")
-        font.setPointSize(21)
         self.download_btn.setFont(font)
         self.download_btn.setObjectName("pushButton_4")
         self.status_label = QtWidgets.QPlainTextEdit(self.centralwidget)
@@ -95,7 +84,7 @@ class RemoteController(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Remote Control App"))
-        self.label.setText(_translate("MainWindow", "Multi Recorder"))
+        self.label.setText(_translate("MainWindow", "RC APP"))
         self.start_btn.setText(_translate("MainWindow", "Start"))
         self.stop_btn.setText(_translate("MainWindow", "Stop"))
         self.status_btn.setText(_translate("MainWindow", "Status"))
