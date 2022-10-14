@@ -33,25 +33,36 @@ def match(vid_1, vid_2):
         lambda x: int(os.path.splitext(os.path.basename(x))[0]),
         out_images_2)))
 
-    THRESHOLD_NS = 100000
+    # THRESHOLD_NS = 100000  # 100 micro-secs (0.1 ms)
+    THRESHOLD_NS = 10000000  # (10 ms)
+    # THRESHOLD_NS = 100000000  # (100 ms)
 
     left = pd.DataFrame({'t': image_timestamps_1,
                          'left': image_timestamps_1}, dtype=int)
+    print("Num timestamps in file 1:", len(left))
+    print(left.head())
+    print(left.dtypes)
     # TODO: change this quick hack to prevent pandas from
     # converting ints to floats
     right = pd.DataFrame({'t': image_timestamps_2,
                           'right_int': image_timestamps_2,
                           'right': list(map(str, image_timestamps_2))},
                          )
+    print("Num timestamps in file 2:", len(right))
+    print(right.head())
     print(right.dtypes)
+
     # align by nearest, because we need to account for frame drops
     df = pd.merge_asof(left, right, on='t',
                        tolerance=THRESHOLD_NS,
                        allow_exact_matches=True,
                        direction='nearest')
+
+    print("Num timestamps after merge:", len(df))
     df = df.dropna()
-    df = df.drop('t', axis='columns')
+    # df = df.drop('t', axis='columns')
     df = df.drop('right_int', axis='columns')
+    print("Num timestamps after drop:", len(df))
 
     df = df.reset_index(drop=True)
     print(df.head())
