@@ -1,4 +1,4 @@
-#app.py
+# TODO:// Need to do changes based on file storage idea. i.e what folder structure etc 
 from flask import Flask, json, request, jsonify
 import os
 import urllib.request
@@ -10,7 +10,6 @@ app.secret_key = "recSync-fileserver"
 
 UPLOAD_FOLDER = 'static/uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
 
