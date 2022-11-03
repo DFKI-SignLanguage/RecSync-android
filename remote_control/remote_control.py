@@ -12,24 +12,29 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 import websocket
 
 
+
 class RemoteController(object):
 
     def __init__(self, MainWindow ) -> None:
         self.setupUi(MainWindow)
 
+
+
     def startBtn(self):
-        self.label.setText('Starting Recording')
+        self.label.setText('Recording Started')
         self.label.adjustSize()
-        self.ws.send("START")
+        self.ws.send("START_REC")
     
     def stopBtn(self):
-        self.label.setText('Stop Recording')
-        self.ws.send("STOP")
+        self.label.setText('Recording Stopped')
+        self.ws.send("STOP_REC")
     def statusBtn(self):
         self.ws.send("STATUS")
-
+        message = self.ws.recv()
+        self.label.setText(message)
     def downloadBtn(self):
-        self.ws.send("")
+        endpoint = self.api_input.toPlainText()
+        self.ws.send("UPLOAD@@"+endpoint+"@@testsession")
 
     def setupUi(self, MainWindow):
         self.ws = websocket.WebSocket()
@@ -50,15 +55,17 @@ class RemoteController(object):
         self.start_btn.setGeometry(QtCore.QRect(130, 90, 161, 61))
         self.start_btn.setFont(font)
         self.start_btn.setObjectName("pushButton")
+        self.start_btn.clicked.connect(self.startBtn)
         self.stop_btn = QtWidgets.QPushButton(self.centralwidget)
         self.stop_btn.setGeometry(QtCore.QRect(430, 90, 161, 61))
-        self.start_btn.clicked.connect(self.startBtn)
         self.stop_btn.setFont(font)
         self.stop_btn.setObjectName("pushButton_2")
+        self.stop_btn.clicked.connect(self.stopBtn)
         self.status_btn = QtWidgets.QPushButton(self.centralwidget)
         self.status_btn.setGeometry(QtCore.QRect(280, 300, 161, 61))
         self.status_btn.setFont(font)
         self.status_btn.setObjectName("pushButton_3")
+        self.status_btn.clicked.connect(self.statusBtn)
         self.api_input = QtWidgets.QTextEdit(self.centralwidget)
         self.api_input.setGeometry(QtCore.QRect(143, 390, 451, 31))
         self.api_input.setObjectName("textEdit")
@@ -66,6 +73,7 @@ class RemoteController(object):
         self.download_btn.setGeometry(QtCore.QRect(280, 450, 161, 61))
         self.download_btn.setFont(font)
         self.download_btn.setObjectName("pushButton_4")
+        self.download_btn.clicked.connect(self.downloadBtn)
         self.status_label = QtWidgets.QPlainTextEdit(self.centralwidget)
         self.status_label.setGeometry(QtCore.QRect(173, 180, 381, 91))
         self.status_label.setObjectName("plainTextEdit")

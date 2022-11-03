@@ -234,6 +234,26 @@ public class MainActivity extends Activity {
         } else {
             // Wait for user to finish permissions before setting up the app.
         }
+        softwareSyncController =
+                new SoftwareSyncController(this, phaseAlignController, softwaresyncStatusTextView);
+
+        if(softwareSyncController.isLeader()) {
+            Toast.makeText(this, "Starting websocket", Toast.LENGTH_LONG).show();
+            Javalin jwsObj = Javalin.create().start(7867);
+            jwsObj.ws("/remotecon", ws -> {
+                ws.onConnect(ctx -> {
+                    Log.i(TAG, "web socket connection established");
+                });
+                ws.onClose(ctx -> {
+                    Log.i(TAG, "web socket connection closed");
+                });
+                ws.onMessage(this::handleWebSocketMsg);
+                ws.onError(ctx -> {
+                    Log.i(TAG, "web socket error");
+                });
+
+            });
+        }
 
     }
 
@@ -331,46 +351,52 @@ public class MainActivity extends Activity {
         surfaceView.setVisibility(View.VISIBLE);
 
         startCameraThread();
-        softwareSyncController =
-                new SoftwareSyncController(this, phaseAlignController, softwaresyncStatusTextView);
-        if(softwareSyncController.isLeader()) {
-            Toast.makeText(this, "Starting websocket", Toast.LENGTH_LONG).show();
-            Javalin jwsObj = Javalin.create().start(7867);
-            jwsObj.ws("/remotecon", ws -> {
-                ws.onConnect(ctx -> {
-                    Log.i(TAG, "web socket connection established");
-                });
-                ws.onClose(ctx -> {
-                    Log.i(TAG, "web socket connection closed");
-                });
-                ws.onMessage(this::handleWebSocketMsg);
-                ws.onError(ctx -> {
-                    Log.i(TAG, "web socket error");
-                });
 
-            });
-        }
 
 
     }
     private void handleWebSocketMsg(@NotNull WsMessageContext wsMessageContext){
-        String command = wsMessageContext.message();
+        String msg = wsMessageContext.message();
+        String[] infoParts = msg.split("@@");
+        String command = infoParts[0];
         Log.i(TAG,"handling the message");
+        Button btn;
+        btn = (Button)findViewById(R.id.capture_still_button);
+
         switch(command){
-            case "START":
-                startVideo(false);
-                ((SoftwareSyncLeader) softwareSyncController.softwareSync)
-                        .broadcastRpc(
-                                SoftwareSyncController.METHOD_START_RECORDING,
-                                "0");
+            case "START_REC":
+                Log.i(TAG,"handling the message in START");
+
+                btn.callOnClick();
+                this.isVideoRecording = true;
+                //startVideo(false);
+                //((SoftwareSyncLeader) softwareSyncController.softwareSync)
+                //        .broadcastRpc(
+                //                SoftwareSyncController.METHOD_START_RECORDING,
+                //                "0");
                 break;
-            case "STOP":
-                stopVideo();
-                ((SoftwareSyncLeader) softwareSyncController.softwareSync)
-                        .broadcastRpc(
-                                SoftwareSyncController.METHOD_STOP_RECORDING,
-                                "0");
+            case "STOP_REC":
+                Log.i(TAG,"handling the message in STOP");
+                btn.callOnClick();
+                //startPreview(false);
+                //((SoftwareSyncLeader) softwareSyncController.softwareSync)
+                //        .broadcastRpc(
+                //                SoftwareSyncController.METHOD_STOP_RECORDING,
+                //                "0");
                 break;
+
+
+            case "UPLOAD" :
+                Log.i(TAG,"handling the message in DOWNLOAD:" + infoParts[1] );
+                break;
+
+
+            case "STATUS" :
+                String status = softwaresyncStatusTextView.getText().toString();
+                Log.i(TAG,"handling the message in STATUS:" + status );
+                wsMessageContext.send(status);
+                break;
+
         }
     }
 
@@ -481,12 +507,17 @@ public class MainActivity extends Activity {
 
             captureStillButton.setOnClickListener(
                     view -> {
+                        //Log.i(TAG, "Click event triggered to stop video");
+                        String check = new Boolean(isVideoRecording).toString() ;
+                        Log.i(TAG, "IS VIDEO RECORDING: " + check );
                         if (isVideoRecording) {
                             stopVideo();
                             ((SoftwareSyncLeader) softwareSyncController.softwareSync)
                                     .broadcastRpc(
                                             SoftwareSyncController.METHOD_STOP_RECORDING,
                                             "0");
+                            Log.i(TAG, "Stopping recording ÖÖ :");
+
 
                         } else {
                             startVideo(false);
@@ -494,7 +525,7 @@ public class MainActivity extends Activity {
                                     .broadcastRpc(
                                             SoftwareSyncController.METHOD_START_RECORDING,
                                             "0");
-                            Log.i(TAG, "Click event triggered");
+                            Log.i(TAG, "Starting recording ÖÖ :");
                         }
 
 /*            if (cameraController.getOutputSurfaces().isEmpty()) {
