@@ -34,7 +34,7 @@ class RemoteController(object):
         self.label.setText(message)
     def downloadBtn(self):
         endpoint = self.api_input.toPlainText()
-        self.ws.send("UPLOAD@@"+endpoint+"@@testsession")
+        self.ws.send("UPLOAD@@"+endpoint+"@@Test_UPLOAD")
 
     def setupUi(self, MainWindow):
         self.ws = websocket.WebSocket()

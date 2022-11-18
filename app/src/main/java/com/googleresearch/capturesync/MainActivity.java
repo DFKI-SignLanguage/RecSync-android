@@ -388,6 +388,26 @@ public class MainActivity extends Activity {
 
             case "UPLOAD" :
                 Log.i(TAG,"handling the message in DOWNLOAD:" + infoParts[1] );
+                try {
+                    File sdcard = Environment.getExternalStorageDirectory();
+                    String filePath = sdcard.getAbsolutePath()+ "/RecSync/VID/";
+                    File path = new File(filePath);
+                    File list[] = path.listFiles();
+                    String filename;
+                    for(int i=0; i< list.length; i++){
+                            filename = list[i].getName();
+                            if(filename.startsWith(infoParts[2])){
+                                String[] fileList = {filePath + filename};
+                                new RemoteFileUpload().execute(fileList);
+                            }
+                    }
+                }
+                catch(Exception e){
+                    Log.i(TAG,"In exception block");
+                    e.printStackTrace();
+                }
+
+
                 break;
 
 
