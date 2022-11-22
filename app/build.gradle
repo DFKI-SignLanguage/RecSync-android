@@ -23,6 +23,7 @@ android {
     }
     packagingOptions {
         exclude 'org/eclipse/jetty/http/encoding.properties'
+        resources.excludes.add("META-INF/*")
     }
 }
 
@@ -33,4 +34,5 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.1'
+    api 'com.github.ok2c.hc5.android:httpclient-android:0.2.0'
 }

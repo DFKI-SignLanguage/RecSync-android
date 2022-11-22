@@ -34,14 +34,15 @@ class RemoteController(object):
         self.label.setText(message)
     def downloadBtn(self):
         endpoint = self.api_input.toPlainText()
-        self.ws.send("UPLOAD@@"+endpoint+"@@Test_UPLOAD")
+        download_prefix = self.download_prefix_text.toPlainText()
+        self.ws.send("UPLOAD@@"+endpoint+"@@"+download_prefix)
 
     def setupUi(self, MainWindow):
         self.ws = websocket.WebSocket()
         #self.ws.connect("ws://172.16.62.107:7867/remotecon")
         self.ws.connect("ws://192.168.5.2:7867/remotecon")
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(800, 600)
+        MainWindow.resize(800, 800)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.label = QtWidgets.QLabel(self.centralwidget)
@@ -69,8 +70,11 @@ class RemoteController(object):
         self.api_input = QtWidgets.QTextEdit(self.centralwidget)
         self.api_input.setGeometry(QtCore.QRect(143, 390, 451, 31))
         self.api_input.setObjectName("textEdit")
+        self.download_prefix_text = QtWidgets.QTextEdit(self.centralwidget)
+        self.download_prefix_text.setGeometry(QtCore.QRect(280, 430, 161, 31))
+        self.download_prefix_text.setObjectName("prefix_text")
         self.download_btn = QtWidgets.QPushButton(self.centralwidget)
-        self.download_btn.setGeometry(QtCore.QRect(280, 450, 161, 61))
+        self.download_btn.setGeometry(QtCore.QRect(280, 500, 161, 61))
         self.download_btn.setFont(font)
         self.download_btn.setObjectName("pushButton_4")
         self.download_btn.clicked.connect(self.downloadBtn)
@@ -97,6 +101,7 @@ class RemoteController(object):
         self.stop_btn.setText(_translate("MainWindow", "Stop"))
         self.status_btn.setText(_translate("MainWindow", "Status"))
         self.api_input.setPlaceholderText(_translate("MainWindow", "Please enter the api endpoint where you want the files to be uploaded "))
+        self.download_prefix_text.setPlaceholderText(_translate("MainWindow", "Session PREFIX for download "))
         self.download_btn.setText(_translate("MainWindow", "Download"))
         self.status_label.setPlaceholderText(_translate("MainWindow", "No status "))
 

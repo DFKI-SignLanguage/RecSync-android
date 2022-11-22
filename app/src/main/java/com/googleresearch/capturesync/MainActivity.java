@@ -398,7 +398,7 @@ public class MainActivity extends Activity {
                             filename = list[i].getName();
                             if(filename.startsWith(infoParts[2])){
                                 String[] fileList = {filePath + filename};
-                                new RemoteFileUpload().execute(fileList);
+                                new UploadFileToServer().execute(fileList);
                             }
                     }
                 }
