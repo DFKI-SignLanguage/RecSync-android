@@ -185,6 +185,7 @@ public class MainActivity extends Activity {
     // High level camera controls.
     private CameraController cameraController;
     private CameraCaptureSession captureSession;
+    private String sessionPrefixText = "";
 
     /**
      * Manages SoftwareSync setup/teardown. Since softwaresync should only run when the camera is
@@ -365,8 +366,8 @@ public class MainActivity extends Activity {
 
         switch(command){
             case "START_REC":
-                Log.i(TAG,"handling the message in START");
-
+                Log.i(TAG,"handling the message in START, Session_Prefix :" + infoParts[1]);
+                this.sessionPrefixText = infoParts[1];
                 btn.callOnClick();
                 this.isVideoRecording = true;
                 //startVideo(false);
@@ -540,12 +541,13 @@ public class MainActivity extends Activity {
 
 
                         } else {
-                            startVideo(false);
+
+                            startVideo(false, this.sessionPrefixText);
                             ((SoftwareSyncLeader) softwareSyncController.softwareSync)
                                     .broadcastRpc(
                                             SoftwareSyncController.METHOD_START_RECORDING,
-                                            "0");
-                            Log.i(TAG, "Starting recording ÖÖ :");
+                                            this.sessionPrefixText);
+                            Log.i(TAG, "Starting recording " + this.sessionPrefixText);
                         }
 
 /*            if (cameraController.getOutputSurfaces().isEmpty()) {
@@ -1034,7 +1036,7 @@ public class MainActivity extends Activity {
      * Create directory and return file
      * returning video file
      */
-    private String getOutputMediaFilePath() throws IOException {
+    private String getOutputMediaFilePath(String prefixText) throws IOException {
 //    // External sdcard file location
 //    File mediaStorageDir = new File(Environment.getExternalStorageDirectory(),
 //            "MROB_VID");
@@ -1053,7 +1055,8 @@ public class MainActivity extends Activity {
         lastTimeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss",
                 Locale.getDefault()).format(new Date());
         String mediaFile;
-        mediaFile = dir.toString() + File.separator + "VID_" + lastTimeStamp + ".mp4";
+        //mediaFile = dir.toString() + File.separator + "VID_" + lastTimeStamp + ".mp4";
+        mediaFile = dir.toString() + File.separator + prefixText +"_"+ lastTimeStamp + ".mp4";
         return mediaFile;
 
     }
@@ -1061,17 +1064,17 @@ public class MainActivity extends Activity {
     private void createRecorderSurface() throws IOException {
         surface = MediaCodec.createPersistentInputSurface();
 
-        MediaRecorder recorder = setUpMediaRecorder(surface, false);
+        MediaRecorder recorder = setUpMediaRecorder(surface, false, "");
         recorder.prepare();
         recorder.release();
         deleteUnusedVideo();
     }
 
-    private MediaRecorder setUpMediaRecorder(Surface surface) throws IOException {
-        return setUpMediaRecorder(surface, true);
+    private MediaRecorder setUpMediaRecorder(Surface surface, String prefixText) throws IOException {
+        return setUpMediaRecorder(surface, true, prefixText);
     }
 
-    private MediaRecorder setUpMediaRecorder(Surface surface, boolean specifyOutput) throws IOException {
+    private MediaRecorder setUpMediaRecorder(Surface surface, boolean specifyOutput, String prefixText) throws IOException {
         MediaRecorder recorder = new MediaRecorder();
         recorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
         recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
@@ -1082,7 +1085,7 @@ public class MainActivity extends Activity {
          * set output file in media recorder
          */
 
-        lastVideoPath = getOutputMediaFilePath();
+        lastVideoPath = getOutputMediaFilePath(prefixText);
         recorder.setOutputFile(lastVideoPath);
 
         CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_1080P);
@@ -1108,7 +1111,7 @@ public class MainActivity extends Activity {
         return isVideoRecording;
     }
 
-    public void startVideo(boolean wantAutoExp) {
+    public void startVideo(boolean wantAutoExp, String prefixText) {
         Log.d(TAG, "Starting video.");
         //Toast.makeText(this, "Started recording video", Toast.LENGTH_LONG).show();
 
@@ -1116,8 +1119,8 @@ public class MainActivity extends Activity {
         try {
 
             Log.d(TAG, "Starting video after toast.");
-            mediaRecorder = setUpMediaRecorder(surface);
-            String filename = lastTimeStamp + ".csv";
+            mediaRecorder = setUpMediaRecorder(surface, prefixText);
+            String filename = prefixText+"_"+lastTimeStamp + ".csv";
             // Creates frame timestamps logger
             try {
                 mLogger = new CSVLogger(SUBDIR_NAME, filename, this);

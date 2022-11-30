@@ -33,7 +33,7 @@ public class RemoteFileUpload extends  AsyncTask<String, Integer, Boolean> {
 
         try {
             FileInputStream fis = new FileInputStream(new File(selectedFilePaths[0]));
-
+            System.out.println("FILE_PATH: " + selectedFilePaths[0]);
             URL url = new URL(urlServer);
             conn = (HttpURLConnection) url.openConnection();
             conn.setChunkedStreamingMode(maxBufferSize);
