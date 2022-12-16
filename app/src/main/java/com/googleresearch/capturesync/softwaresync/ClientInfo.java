@@ -16,6 +16,8 @@
 
 package com.googleresearch.capturesync.softwaresync;
 
+import android.provider.Settings;
+
 import java.net.InetAddress;
 
 /**

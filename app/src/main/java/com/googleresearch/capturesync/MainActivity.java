@@ -17,6 +17,8 @@
 
 package com.googleresearch.capturesync;
 
+import static java.security.AccessController.getContext;
+
 import android.Manifest.permission;
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -38,11 +40,14 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.CamcorderProfile;
 import android.media.MediaCodec;
 import android.media.MediaRecorder;
+import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.provider.Settings;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.util.Size;
 import android.view.Gravity;
@@ -57,6 +62,7 @@ import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.provider.Settings.Secure;
 
 import com.googleresearch.capturesync.softwaresync.CSVLogger;
 import com.googleresearch.capturesync.softwaresync.SoftwareSyncLeader;
@@ -65,6 +71,7 @@ import com.googleresearch.capturesync.softwaresync.phasealign.PeriodCalculator;
 import com.googleresearch.capturesync.softwaresync.phasealign.PhaseConfig;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -77,8 +84,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.FutureTask;
 import java.util.stream.Collectors;
 
@@ -388,26 +397,13 @@ public class MainActivity extends Activity {
 
 
             case "UPLOAD" :
-                Log.i(TAG,"handling the message in DOWNLOAD:" + infoParts[1] );
-                try {
-                    File sdcard = Environment.getExternalStorageDirectory();
-                    String filePath = sdcard.getAbsolutePath()+ "/RecSync/VID/";
-                    File path = new File(filePath);
-                    File list[] = path.listFiles();
-                    String filename;
-                    for(int i=0; i< list.length; i++){
-                            filename = list[i].getName();
-                            if(filename.startsWith(infoParts[2])){
-                                String[] fileList = {filePath + filename};
-                                new UploadFileToServer().execute(fileList);
-                            }
-                    }
-                }
-                catch(Exception e){
-                    Log.i(TAG,"In exception block");
-                    e.printStackTrace();
-                }
-
+                Log.i(TAG,"handling the message in DOWNLOAD:" + infoParts[1]);
+                // infoParts[1] is the payload
+                sendFilesToServer(infoParts[1]);
+               ((SoftwareSyncLeader) softwareSyncController.softwareSync)
+                        .broadcastRpc(
+                                SoftwareSyncController.METHOD_UPLOAD_RECORDED_FILES,
+                               infoParts[1]);
 
                 break;
 
@@ -1109,6 +1105,47 @@ public class MainActivity extends Activity {
 
     public boolean isVideoRecording() {
         return isVideoRecording;
+    }
+
+    public void sendFilesToServer(String payload){
+        try {
+
+            String []payloadParams =  payload.split(",");
+            String clientID = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
+            File sdcard = Environment.getExternalStorageDirectory();
+            String videoFilePath = sdcard.getAbsolutePath()+ "/RecSync/VID/";
+            String csvFilePath = sdcard.getAbsolutePath()+ "/RecSync/";
+            File path = new File(videoFilePath);
+            File list[] = path.listFiles();
+            Map<String,String> postRequestDataMap = new HashMap<>();
+            String filename = "FileNotFound";
+            for(int i=0; i< list.length; i++){
+                filename = list[i].getName();
+                if(filename.startsWith(payloadParams[1])){
+                    postRequestDataMap.put("VIDEO_FILE_PATH", videoFilePath + filename);
+                    break;
+                }
+
+            }
+            if(filename != "FileNotFound"){
+                postRequestDataMap.put("CSV_FILE_PATH", csvFilePath + filename.split("\\.")[0] + ".csv" );
+                postRequestDataMap.put("CLIENT_ID", clientID);
+                postRequestDataMap.put("API_ENDPOINT", payloadParams[0]);
+                postRequestDataMap.put("SESSION_PREFIX", payloadParams[1]);
+
+                new UploadFileToServer().execute(postRequestDataMap);
+            }else{
+                throw new FileNotFoundException();
+            }
+            for (String name: postRequestDataMap.keySet()) {
+                String key = name;
+                String value = postRequestDataMap.get(name);
+                System.out.println(key + ":" + value);
+            }
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     public void startVideo(boolean wantAutoExp, String prefixText) {

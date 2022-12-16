@@ -62,6 +62,7 @@ public class SoftwareSyncController implements Closeable {
     public static final int METHOD_SET_2A = 200_002;
     public static final int METHOD_START_RECORDING = 200_003;
     public static final int METHOD_STOP_RECORDING = 200_004;
+    public static final int METHOD_UPLOAD_RECORDED_FILES = 200_005;
 
     private long upcomingTriggerTimeNs;
 
@@ -206,6 +207,15 @@ public class SoftwareSyncController implements Closeable {
                                 context::stopVideo
                         );
                     });
+            clientRpcs.put(
+                    METHOD_UPLOAD_RECORDED_FILES,
+                    payload -> {
+                        Log.v(TAG, "Uploading Recorded Files");
+                        context.runOnUiThread(
+                                () -> context.sendFilesToServer(payload)
+                        );
+                    });
+
 
             clientRpcs.put(
                     SyncConstants.METHOD_MSG_OFFSET_UPDATED,

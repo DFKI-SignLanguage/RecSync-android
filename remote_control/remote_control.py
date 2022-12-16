@@ -17,15 +17,12 @@ class RemoteController(object):
 
     def __init__(self, MainWindow ) -> None:
         self.setupUi(MainWindow)
-
-
-
     def startBtn(self):
         self.label.setText('Recording Started')
         self.label.adjustSize()
         session_prefix = self.download_prefix_text.toPlainText()
-        self.ws.send("START_REC@@"+session_prefix)
-    
+        if self.isPrefix(session_prefix):
+            self.ws.send("START_REC@@"+session_prefix)
     def stopBtn(self):
         self.label.setText('Recording Stopped')
         self.ws.send("STOP_REC")
@@ -38,8 +35,15 @@ class RemoteController(object):
     def downloadBtn(self):
         endpoint = self.api_input.toPlainText()
         download_prefix = self.download_prefix_text.toPlainText()
-        self.ws.send("UPLOAD@@"+endpoint+"@@"+download_prefix)
-
+        if self.isPrefix(download_prefix):
+            self.ws.send("UPLOAD@@"+endpoint+","+download_prefix)
+    def isPrefix(self, prefix_text):
+        if prefix_text is None or len(prefix_text) == 0:
+           self.label.setText('Prefix Text Missing')
+           self.label.adjustSize()
+           self.label.setStyleSheet("background-color: red")
+           return False
+        return True
     def setupUi(self, MainWindow):
         self.ws = websocket.WebSocket()
         #self.ws.connect("ws://172.16.62.107:7867/remotecon")

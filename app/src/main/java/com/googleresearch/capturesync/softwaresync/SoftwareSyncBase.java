@@ -16,7 +16,9 @@
 
 package com.googleresearch.capturesync.softwaresync;
 
+import android.content.ContentResolver;
 import android.os.HandlerThread;
+import android.provider.Settings;
 import android.util.Log;
 import java.io.Closeable;
 import java.io.IOException;
@@ -32,7 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
+import android.provider.Settings.Secure;
 /**
  * SoftwareSyncBase is the abstract base class to SoftwareSyncLeader and SoftwareSyncClient, holding
  * shared objects such as UDP ports and sockets, local client information and methods for starting
