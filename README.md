@@ -11,17 +11,69 @@ If you use this application, please cite [Sub-millisecond Video Synchronization 
       primaryClass={cs.CV}
 }
 ```
-### Usage:
+## Usage:
 
+### Network setup
 
-#### Leader smartphone setup
+(Use img from the slides)
+
+Cable connect the PC and the Master device
+
+* Configure the ethernet adaptor of your PC 
+  * Static IP: 192.168.5.1
+  * Mask: 255.255.255.0
+  * Gateway 192.168.5.1
+
+* Configure the Master with an Ethernet adaptor and set it to:
+  * Static IP: 192.168.5.2
+  * Mask: 255.255.255.0
+  * Gateway 192.168.5.1
+
+Check the Ethernet connection with Ping.
+E.g., from the PC, in a terminal
+
+```
+ping 192.168.5.2
+
+64 bytes from 192.168.5.2: icmp_seq=347 ttl=125 time=2.425 ms
+64 bytes from 192.168.5.2: icmp_seq=348 ttl=125 time=2.233 ms
+64 bytes from 192.168.5.2: icmp_seq=349 ttl=125 time=7.560 ms
+64 bytes from 192.168.5.2: icmp_seq=350 ttl=125 time=2.288 ms
+```
+
+### Leader smartphone setup
 
 1.  Start a Wi-Fi hotspot.
-2.  The app should display connected clients and buttons for recording control
+2.  Start tha app
 
-#### Client smartphones setup
+### Clients smartphones setup
 
-1.  Enable WiFi and connect to the Wi-Fi hotspot.
+1. Enable WiFi and connect to the Wi-Fi hotspot.
+2. Start the app
+
+The master app should display now the connected clients and buttons for recording control
+
+
+#### Remote Controller on the connected PC
+
+If not done yet, setup a python environment using Python 3.7+ (This is needed only the first time)
+
+```
+cd Remote Controller
+python3 -m venv p3env-RecSynchNG
+source p3env-RecSynchNG/bin/activate
+pip install -r requirements.txt
+```
+
+To use it, activate the environment and run the remote controller (App must be already running on the _master_ Android device)
+
+```
+cd RemoteController
+source p3env-RecSynchNG/bin/activate
+python remote_controller.py
+```
+
+
 
 #### Recording video
 
