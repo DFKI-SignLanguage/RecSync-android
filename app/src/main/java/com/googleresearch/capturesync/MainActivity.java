@@ -131,9 +131,9 @@ public class MainActivity extends Activity {
         return curSequence;
     }
 
-    public void setLogger(CSVLogger mLogger) {
-        this.mLogger = mLogger;
-    }
+//    public void setLogger(CSVLogger mLogger) {
+//        this.mLogger = mLogger;
+//    }
 
     public CSVLogger getLogger() {
         return mLogger;
@@ -150,9 +150,9 @@ public class MainActivity extends Activity {
     // Phase config file to use for phase alignment, configs are located in the raw folder.
     private final int phaseConfigFile = R.raw.default_phaseconfig;
 
-    public MediaRecorder getMediaRecorder() {
-        return mediaRecorder;
-    }
+//    public MediaRecorder getMediaRecorder() {
+//        return mediaRecorder;
+//    }
 
     private MediaRecorder mediaRecorder = new MediaRecorder();
     private boolean isVideoRecording = false;
@@ -534,7 +534,7 @@ public class MainActivity extends Activity {
                                             SoftwareSyncController.METHOD_STOP_RECORDING,
                                             "0");
                             Log.i(TAG, "Stopping recording ÖÖ :");
-
+                            startPreview();
 
                         } else {
 
@@ -691,7 +691,7 @@ public class MainActivity extends Activity {
     }
 
     private void closeCamera() {
-        stopPreview();
+//        stopPreview();
         captureSession = null;
         surface.release();
         if (cameraController != null) {
@@ -1024,7 +1024,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void startPreview() {
+    public void startPreview() {
         startPreview(false);
     }
 
@@ -1086,7 +1086,9 @@ public class MainActivity extends Activity {
 
         CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_1080P);
         recorder.setVideoSize(profile.videoFrameWidth, profile.videoFrameHeight);
-        recorder.setVideoEncodingBitRate(profile.videoBitRate);
+        recorder.setVideoEncodingBitRate(8000000);
+        recorder.setVideoFrameRate(30);
+        Log.d(TAG, profile.videoBitRate + " Bitrate");
 
         recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
 //    int rotation = getWindowManager().getDefaultDisplay().getRotation();
@@ -1099,13 +1101,13 @@ public class MainActivity extends Activity {
         return recorder;
     }
 
-    public void setVideoRecording(boolean videoRecording) {
-        isVideoRecording = videoRecording;
-    }
-
-    public boolean isVideoRecording() {
-        return isVideoRecording;
-    }
+//    public void setVideoRecording(boolean videoRecording) {
+//        isVideoRecording = videoRecording;
+//    }
+//
+//    public boolean isVideoRecording() {
+//        return isVideoRecording;
+//    }
 
     public void sendFilesToServer(String payload){
         try {
@@ -1118,30 +1120,42 @@ public class MainActivity extends Activity {
             File path = new File(videoFilePath);
             File list[] = path.listFiles();
             Map<String,String> postRequestDataMap = new HashMap<>();
+            List<Map<String, String>> dataFileList = new ArrayList<Map<String, String>>();
             String filename = "FileNotFound";
+            Boolean fileFoundFlag = Boolean.FALSE;
             for(int i=0; i< list.length; i++){
                 filename = list[i].getName();
                 if(filename.startsWith(payloadParams[1])){
                     postRequestDataMap.put("VIDEO_FILE_PATH", videoFilePath + filename);
-                    break;
+                    postRequestDataMap.put("CSV_FILE_PATH", csvFilePath + filename.split("\\.")[0] + ".csv" );
+                    postRequestDataMap.put("CLIENT_ID", clientID);
+                    postRequestDataMap.put("API_ENDPOINT", payloadParams[0]);
+                    postRequestDataMap.put("SESSION_PREFIX", payloadParams[1]);
+                    //new UploadFileToServer().execute(postRequestDataMap);
+                    Map<String, String> myTempCopyMap = new HashMap<String, String>(postRequestDataMap);
+                    dataFileList.add(myTempCopyMap);
+                    postRequestDataMap.clear();
+                    fileFoundFlag = Boolean.TRUE;
                 }
 
             }
-            if(filename != "FileNotFound"){
-                postRequestDataMap.put("CSV_FILE_PATH", csvFilePath + filename.split("\\.")[0] + ".csv" );
-                postRequestDataMap.put("CLIENT_ID", clientID);
-                postRequestDataMap.put("API_ENDPOINT", payloadParams[0]);
-                postRequestDataMap.put("SESSION_PREFIX", payloadParams[1]);
-
-                new UploadFileToServer().execute(postRequestDataMap);
-            }else{
+            if(fileFoundFlag==Boolean.FALSE){
+                //find a way to show this on the app with a msg
                 throw new FileNotFoundException();
+            }else{
+                new UploadFileToServer().execute(dataFileList);
+//
+//                Map<String, String> myMap ;
+//                for (int j=0; j<myFileList.size(); j++)
+//                {
+//                    myMap = myFileList.get(j);
+//                    String val1 = myMap.get("VIDEO_FILE_PATH");
+//                    String val2 = myMap.get("CSV_FILE_PATH");
+//                    Log.d(TAG, "VIDEO_FILE_PATH :" + val1 + " CSV_FILE_PATH:"+val2);
+//                }
+
             }
-            for (String name: postRequestDataMap.keySet()) {
-                String key = name;
-                String value = postRequestDataMap.get(name);
-                System.out.println(key + ":" + value);
-            }
+
 
         }catch (Exception e){
             e.printStackTrace();
@@ -1195,7 +1209,11 @@ public class MainActivity extends Activity {
         // Switch to preview again
 
         //Toast.makeText(this, "Stopped recording video", Toast.LENGTH_LONG).show();
-        startPreview();
+
+        isVideoRecording = false;
+        mediaRecorder.stop();
+        mLogger.close();
+        mLogger = null;
     }
 
     private void stopPreview() {

@@ -78,7 +78,7 @@ class RemoteController(object):
         self.api_input.setGeometry(QtCore.QRect(143, 450, 451, 31))
         self.api_input.setObjectName("textEdit")
         self.download_prefix_text = QtWidgets.QTextEdit(self.centralwidget)
-        self.download_prefix_text.setGeometry(QtCore.QRect(280, 80, 161, 31))
+        self.download_prefix_text.setGeometry(QtCore.QRect(180, 80, 380, 31))
         self.download_prefix_text.setObjectName("prefix_text")
         self.download_btn = QtWidgets.QPushButton(self.centralwidget)
         self.download_btn.setGeometry(QtCore.QRect(280, 380, 161, 61))

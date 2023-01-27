@@ -26,11 +26,6 @@ import android.media.ImageReader;
 import android.os.Handler;
 import android.util.Log;
 import android.util.Pair;
-import android.widget.Toast;
-
-import androidx.annotation.NonNull;
-
-import java.io.File;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -390,25 +385,25 @@ public class ImageMetadataSynchronizer {
             }
           }
 
-          @Override
-          public void onCaptureSequenceCompleted(@NonNull CameraCaptureSession session, int sequenceId, long frameNumber) {
-            super.onCaptureSequenceCompleted(session, sequenceId, frameNumber);
-            if (context.getLastVideoSeqId() != null && sequenceId == context.getLastVideoSeqId() && context.getLogger() != null) {
-              context.getMediaRecorder().stop();
-
-              if (context.isVideoRecording()) {
-                context.setVideoRecording(false);
-              } else {
-                // MediaRecorder created an empty video on preview, should perform a cleanup
-                  context.deleteUnusedVideo();
-              }
-
-              context.getMediaRecorder().reset();
-
-              context.getLogger().close();
-              context.setLogger(null);
-            }
-          }
+//          @Override
+//          public void onCaptureSequenceCompleted(@NonNull CameraCaptureSession session, int sequenceId, long frameNumber) {
+//            super.onCaptureSequenceCompleted(session, sequenceId, frameNumber);
+//            if (context.getLastVideoSeqId() != null && sequenceId == context.getLastVideoSeqId() && context.getLogger() != null) {
+//              context.getMediaRecorder().stop();
+//
+//              if (context.isVideoRecording()) {
+//                context.setVideoRecording(false);
+//              } else {
+//                // MediaRecorder created an empty video on preview, should perform a cleanup
+//                  context.deleteUnusedVideo();
+//              }
+//
+//              context.getMediaRecorder().reset();
+//
+//              context.getLogger().close();
+//              context.setLogger(null);
+//            }
+//          }
         };
   }
 

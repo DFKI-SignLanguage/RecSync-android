@@ -21,6 +21,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.net.Proxy.Type.*;
 
@@ -28,7 +29,7 @@ import android.os.AsyncTask;
 
 
 
-public class UploadFileToServer extends AsyncTask<Map<String, String>, Integer, String> {
+public class UploadFileToServer extends AsyncTask<List<Map<String, String>>, Integer, String> {
     @Override
     protected void onPreExecute() {
         // setting progress bar to zero
@@ -41,12 +42,12 @@ public class UploadFileToServer extends AsyncTask<Map<String, String>, Integer, 
     }
 
     @Override
-    protected String doInBackground(Map<String, String>... postRequestDataMap) {
+    protected String doInBackground(List<Map<String, String>>... postRequestDataMap) {
         return uploadFile(postRequestDataMap[0]);
     }
 
     @SuppressWarnings("deprecation")
-    private String uploadFile(Map<String, String> postRequestDataMap) {
+    private String uploadFile(List<Map<String, String>> postRequestDataList) {
         String responseString = "All Good";
         HttpResponse httpResponse;
         ArrayList<NameValuePair> postParameters;
@@ -59,38 +60,28 @@ public class UploadFileToServer extends AsyncTask<Map<String, String>, Integer, 
 //            if(postRequestDataMap.get("API_ENDPOINT") != ""){
 //                endpoint = postRequestDataMap.get("API_ENDPOINT");
 //            }
+            Map<String, String> postRequestDataMap ;
+            for (int j=0; j<postRequestDataList.size(); j++){
+                postRequestDataMap = postRequestDataList.get(j);
+                final HttpPost httpPost = new HttpPost(endpoint);
+                final File video_file = new File(postRequestDataMap.get("VIDEO_FILE_PATH"));
+                final File csv_file = new File(postRequestDataMap.get("CSV_FILE_PATH"));
+                MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+                builder.setMode(HttpMultipartMode.LEGACY);
+                builder.addPart("file", new FileBody(video_file));
+                builder.addPart("csv_file", new FileBody(csv_file));
+                builder.addTextBody("client_id", postRequestDataMap.get("CLIENT_ID"));
+                builder.addTextBody("session_prefix", postRequestDataMap.get("SESSION_PREFIX"));
 
-            final HttpPost httpPost = new HttpPost(endpoint);
-            final File video_file = new File(postRequestDataMap.get("VIDEO_FILE_PATH"));
-            final File csv_file = new File(postRequestDataMap.get("CSV_FILE_PATH"));
-            MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-            builder.setMode(HttpMultipartMode.LEGACY);
-            builder.addPart("file", new FileBody(video_file));
-            builder.addPart("csv_file", new FileBody(csv_file));
-            builder.addTextBody("client_id", postRequestDataMap.get("CLIENT_ID"));
-            builder.addTextBody("session_prefix", postRequestDataMap.get("SESSION_PREFIX"));
+                HttpEntity entity = builder.build();
+                httpPost.setEntity(entity);
+                httpResponse = httpClient.execute(httpPost);
+                statusCode = httpResponse.getCode();
+                System.out.println("Response Status:" + statusCode);
+                System.out.println("FILE UPLOADED");
 
-//            JSONObject jsonObj = new JSONObject();
-//            try{
-//                jsonObj.put("client_id", postRequestDataMap.get("CLIENT_ID"));
-//                jsonObj.put("session_prefix", postRequestDataMap.get("SESSION_PREFIX"));
-//            }catch(Exception e){
-//                e.printStackTrace();
-//            }
-//
-//// Create the POST object and add the parameters
-//            StringEntity sentity = new StringEntity(jsonObj.toString(), ContentType.APPLICATION_JSON, "UTF-8", false);
-//
-////                  postParameters = new ArrayList<NameValuePair>();
-////            postParameters.add(new BasicNameValuePair("client_id", postRequestDataMap.get("CLIENT_ID")));
-////            postParameters.add(new BasicNameValuePair("session_prefix",postRequestDataMap.get("SESSION_PREFIX") ));
-//            httpPost.setEntity(sentity);
-            HttpEntity entity = builder.build();
-            httpPost.setEntity(entity);
-            httpResponse = httpClient.execute(httpPost);
-            statusCode = httpResponse.getCode();
-            System.out.println("Response Status:" + statusCode);
-            System.out.println("FILE UPLOADED");
+            }
+
 
         } catch (IOException e) {
             e.printStackTrace();

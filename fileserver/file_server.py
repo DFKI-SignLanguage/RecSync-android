@@ -34,9 +34,9 @@ def upload_file():
            resp.status_code = 400
            return resp
 
-   print(request.files)
-   print(request.form)
 
+   session_prefix, client_id = request.form.get("session_prefix"), request.form.get("client_id")
+   print("Request to upload received from CLIENT:" + client_id +" for session " + session_prefix  )
 
    files = request.files.getlist('file')
    files.extend(request.files.getlist('csv_file'))
@@ -44,35 +44,21 @@ def upload_file():
    success = False
 
    # create a directory based on session and client id
-   session_prefix, client_id = request.form.get("session_prefix"), request.form.get("client_id")
    directory_path = os.path.join(app.config['UPLOAD_FOLDER'],session_prefix + "/" + client_id + "/")
-   print(directory_path)
    if not os.path.exists(directory_path):
        os.makedirs(directory_path)
-#    import pdb;pdb.set_trace()
+
    for file in files:
        if file and allowed_file(file.filename):
            filename = secure_filename(file.filename)
+           print("received file: " + filename + " from CLIENT:" + client_id +" for session " + session_prefix   )
            file.save(os.path.join(directory_path, filename))
            success = True
        else:
            errors[file.filename] = 'File type is not allowed'
-   resp = jsonify({'message' : 'Files successfully uploaded'})
+   resp = jsonify({'message' : 'Files successfully downloaded'})
    resp.status_code = 201
    return resp
-#    if success and errors:
-#        errors['message'] = 'File(s) successfully uploaded'
-#        resp = jsonify(errors)
-#        resp.status_code = 500
-#        return resp
-#    if success:
-#        resp = jsonify({'message' : 'Files successfully uploaded'})
-#        resp.status_code = 201
-#        return resp
-#    else:
-#        resp = jsonify(errors)
-#        resp.status_code = 500
-#        return resp
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000,debug=True)
