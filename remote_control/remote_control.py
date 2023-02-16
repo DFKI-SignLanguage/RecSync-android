@@ -10,6 +10,7 @@
 import sys
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import QMessageBox
 import websocket
 
 
@@ -18,19 +19,43 @@ class RemoteController(object):
     def __init__(self, MainWindow ) -> None:
         self.setupUi(MainWindow)
 
+    def show_popup(self):
+    		msg = QMessageBox()
+    		msg.setWindowTitle("Connection Error")
+    		msg.setText("Seems like your websocket connection is closed")
+    		msg.setIcon(QMessageBox.Critical)
+    		msg.exec_()
+
     def startBtn(self):
-        self.label.setText('Recording Started')
-        self.label.adjustSize()
         session_prefix = self.download_prefix_text.toPlainText()
         if self.isPrefix(session_prefix):
-            self.ws.send("START_REC@@"+session_prefix)
+            try:
+                self.ws.send("START_REC@@"+session_prefix)
+                self.label.setText('Recording Started')
+                self.label.adjustSize()
+            except Exception as e:
+                self.show_popup()
+                with open('last_prefix.txt','w+') as file:
+                    file.writelines(session_prefix)
+                sys.exit()
 
     def stopBtn(self):
         self.label.setText('Recording Stopped')
-        self.ws.send("STOP_REC")
+        try:
+            self.ws.send("STOP_REC")
+        except Exception as e:
+            self.show_popup()
+            with open('last_prefix.txt','w+') as file:
+                file.writelines(self.download_prefix_text.toPlainText())
+            sys.exit()
 
     def statusBtn(self):
-        self.ws.send("STATUS")
+        try:
+            self.ws.send("STATUS")
+        except Exception as e:
+            self.show_popup()
+        with open('last_prefix.txt','w+') as file:
+            file.writelines(self.download_prefix_text.toPlainText())
         message = self.ws.recv()
         self.status_label.setPlainText(message)
 
@@ -57,7 +82,7 @@ class RemoteController(object):
         # Setup the WEB SOCKET
         self.ws = websocket.WebSocket()
         #self.ws.connect("ws://172.16.62.107:7867/remotecon")
-        self.ws.connect("ws://192.168.5.2:7867/remotecon")
+        self.ws.connect("ws://192.168.5.2:7867/remotecon", ping_interval=1)
 
         #
         # Setup the GUI
@@ -93,6 +118,13 @@ class RemoteController(object):
         self.download_prefix_text = QtWidgets.QTextEdit(self.centralwidget)
         self.download_prefix_text.setGeometry(QtCore.QRect(180, 80, 380, 31))
         self.download_prefix_text.setObjectName("prefix_text")
+        try:
+            with open('last_prefix.txt','r+') as file:
+                data = file.readlines()
+            if len(data) > 0:
+                self.download_prefix_text.setText(data[0])
+        except:
+            pass
         self.download_btn = QtWidgets.QPushButton(self.centralwidget)
         self.download_btn.setGeometry(QtCore.QRect(280, 380, 161, 61))
         self.download_btn.setFont(font)
