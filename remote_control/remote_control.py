@@ -52,12 +52,29 @@ class RemoteController(object):
     def statusBtn(self):
         try:
             self.ws.send("STATUS")
+            message = self.ws.recv()
+            self.status_label.setPlainText(message)
         except Exception as e:
             self.show_popup()
-        with open('last_prefix.txt','w+') as file:
-            file.writelines(self.download_prefix_text.toPlainText())
-        message = self.ws.recv()
-        self.status_label.setPlainText(message)
+            with open('last_prefix.txt','w+') as file:
+                file.writelines(self.download_prefix_text.toPlainText())
+            sys.exit()
+
+    def delete_all_btn(self):
+        msgBox = QMessageBox()
+        msgBox.setText("Are you sure you want to delete all the recordings and related files ?")
+        msgBox.setInformativeText("This action cannot be reversed !!!")
+        msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+        msgBox.setDefaultButton(QMessageBox.Cancel)
+        ret = msgBox.exec()
+        if ret == QMessageBox.Ok:
+            try:
+                self.ws.send("DELETE_ALL")
+            except Exception as e:
+                self.show_popup()
+                with open('last_prefix.txt','w+') as file:
+                    file.writelines(self.download_prefix_text.toPlainText())
+                sys.exit()
 
     def clearStatusBtn(self):
         self.status_label.setPlainText("")
@@ -77,14 +94,11 @@ class RemoteController(object):
         return True
 
     def setupUi(self, MainWindow):
-
-        #
         # Setup the WEB SOCKET
         self.ws = websocket.WebSocket()
-        #self.ws.connect("ws://172.16.62.107:7867/remotecon")
+
         self.ws.connect("ws://192.168.5.2:7867/remotecon", ping_interval=1)
 
-        #
         # Setup the GUI
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(800, 800)
@@ -130,6 +144,14 @@ class RemoteController(object):
         self.download_btn.setFont(font)
         self.download_btn.setObjectName("pushButton_4")
         self.download_btn.clicked.connect(self.downloadBtn)
+
+        self.delete_btn = QtWidgets.QPushButton(self.centralwidget)
+        self.delete_btn.setGeometry(QtCore.QRect(280, 520, 161, 50))
+        self.delete_btn.setFont(font)
+        self.delete_btn.setObjectName("pushButton_6")
+        self.delete_btn.clicked.connect(self.delete_all_btn)
+
+
         self.status_label = QtWidgets.QPlainTextEdit(self.centralwidget)
         self.status_label.setGeometry(QtCore.QRect(173, 280, 381, 91))
         self.status_label.setObjectName("plainTextEdit")
@@ -159,6 +181,8 @@ class RemoteController(object):
         self.status_btn.setText(_translate("MainWindow", "Status"))
         self.status_clear_btn.setText(_translate("MainWindow", "X"))
         self.status_clear_btn.setStyleSheet('QPushButton {;color: red;}')
+        self.delete_btn.setText(_translate("MainWindow", "Empty Device"))
+        self.delete_btn.setStyleSheet('QPushButton {;background-color: red;}')
         self.api_input.setPlaceholderText(_translate("MainWindow", "Please enter the api endpoint where you want the files to be uploaded."))
         self.download_prefix_text.setPlaceholderText(_translate("MainWindow", " Enter Session Prefix"))
         self.download_btn.setText(_translate("MainWindow", "Download"))

@@ -407,11 +407,20 @@ public class MainActivity extends Activity {
 
                 break;
 
-
             case "STATUS" :
                 String status = softwaresyncStatusTextView.getText().toString();
                 Log.i(TAG,"handling the message in STATUS:" + status );
                 wsMessageContext.send(status);
+                break;
+
+            case "DELETE_ALL" :
+                Log.i(TAG,"handling the message in DELETE_ALL" );
+                deleteAllFiles();
+                ((SoftwareSyncLeader) softwareSyncController.softwareSync)
+                        .broadcastRpc(
+                                SoftwareSyncController.METHOD_EMPTY_DEVICE,
+                                "0");
+
                 break;
 
         }
@@ -1108,6 +1117,32 @@ public class MainActivity extends Activity {
 //    public boolean isVideoRecording() {
 //        return isVideoRecording;
 //    }
+
+    public void deleteAllFiles() {
+        File sdcard = Environment.getExternalStorageDirectory();
+        String videoFilePath = sdcard.getAbsolutePath()+ "/RecSync/VID/";
+        String csvFilePath = sdcard.getAbsolutePath()+ "/RecSync/";
+        File path = new File(videoFilePath);
+        File fileList[] = path.listFiles();
+        Log.i(TAG,"Video File Path:"+videoFilePath );
+        Log.i(TAG,"No of files to delete: "+fileList.length );
+        String filename;
+        for(int i=0; i< fileList.length; i++){
+            filename = fileList[i].getName();
+            try{
+                Log.i(TAG,"inside  deleteall" );
+                File vFile = new File(videoFilePath + filename);
+                vFile.delete();
+                Log.i(TAG,"csv_file_path : " + csvFilePath + filename.split("\\.")[0] + ".csv" );
+                File csvFile = new File(csvFilePath + filename.split("\\.")[0] + ".csv");
+                csvFile.delete();
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+
+        }
+    }
+
 
     public void sendFilesToServer(String payload){
         try {

@@ -63,6 +63,7 @@ public class SoftwareSyncController implements Closeable {
     public static final int METHOD_START_RECORDING = 200_003;
     public static final int METHOD_STOP_RECORDING = 200_004;
     public static final int METHOD_UPLOAD_RECORDED_FILES = 200_005;
+    public static final int METHOD_EMPTY_DEVICE = 200_006;
 
     private long upcomingTriggerTimeNs;
 
@@ -219,6 +220,14 @@ public class SoftwareSyncController implements Closeable {
                         );
                     });
 
+            clientRpcs.put(
+                    METHOD_EMPTY_DEVICE,
+                    payload -> {
+                        Log.v(TAG, "Deleting All Recordings and Related Files");
+                        context.runOnUiThread(
+                                () -> context.deleteAllFiles()
+                        );
+                    });
 
             clientRpcs.put(
                     SyncConstants.METHOD_MSG_OFFSET_UPDATED,
