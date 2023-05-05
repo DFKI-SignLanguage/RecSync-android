@@ -4,6 +4,7 @@ import csv
 import os
 import cv2
 
+import argparse
 
 def compute_time_range(dfs):
     # Find the lowest and highest numbers in all the data frames
@@ -16,6 +17,7 @@ def compute_time_range(dfs):
     
     return (min_common, max_common)
 
+
 def trim_into_interval(csv_path, dfs, min_common, max_common):
     # Trim each data frame to the min_common and max_common interval and save to a new file
     for i, df in enumerate(dfs):
@@ -24,6 +26,7 @@ def trim_into_interval(csv_path, dfs, min_common, max_common):
 
     # Print the results
     print(f"{len(dfs)} data frames trimmed and saved to {csv_path}")
+
 
 def extract(input_dir, output_dir):
     # Loop over each directory in the input directory
@@ -109,4 +112,29 @@ def main():
     trim_into_interval(csv_path, dfs, min_common, max_common)
 
 
-main()
+#
+# MAIN
+if __name__ == "__main__":
+    pass
+
+    # main()
+    # exit(0)
+
+    #
+    # Find all CSV files in the directory and read it into a data frame (DONE)
+
+    #
+    # Find time ranges (Saurabh, To test better)
+
+    #
+    # Trim CSVs (TODO)
+
+    #
+    # Repair CSVs (TODO - Mina)
+
+    #
+    # Extract the frames from the original videos
+    # and rename the file names to the timestamps (DONE)
+
+    #
+    # Reconstruct videos (TODO)
