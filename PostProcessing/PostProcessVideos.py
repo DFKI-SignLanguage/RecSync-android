@@ -6,6 +6,8 @@ import cv2
 
 import argparse
 
+from pathlib import Path
+
 
 THRESHOLD_NS = 10 * 1000
 
@@ -119,10 +121,31 @@ def main():
 #
 # MAIN
 if __name__ == "__main__":
-    pass
 
-    # main()
-    # exit(0)
+    parser = argparse.ArgumentParser(
+        description="Fixes the videos produced by the RecSync recording sessions."
+                    "Output videos will have the same number of frames,"
+                    "with missing/dropped frames inserted as (black) artificial data."
+    )
+    parser.add_argument(
+        "--infolder", type=str, help="The folder containing the collected videos and CSV files with the timestamps.",
+        required=True
+    )
+    parser.add_argument(
+        "--outfolder", type=str, help="The folder where the repaired and aligned frames will be stored.",
+        required=True
+    )
+
+    args = parser.parse_args()
+
+    infolder = Path(args.infolder)
+    outfolder = Path(args.outfolder)
+
+    if not infolder.exists():
+        raise Exception(f"Input folder '{infolder}' doesn't exist.")
+
+    if not infolder.exists():
+        raise Exception(f"Output folder '{outfolder}' doesn't exist.")
 
     #
     # Find all CSV files in the directory and read it into a data frame (DONE)
