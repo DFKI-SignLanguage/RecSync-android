@@ -6,6 +6,10 @@ import cv2
 
 import argparse
 
+
+THRESHOLD_NS = 10 * 1000
+
+
 def compute_time_range(dfs):
     # Find the lowest and highest numbers in all the data frames
     min_common = max(df.iloc[:,0].min() for df in dfs)
