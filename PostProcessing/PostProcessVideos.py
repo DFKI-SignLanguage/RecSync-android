@@ -1,14 +1,14 @@
-import pandas as pd
-import glob
-import csv
 import os
+import csv
+import argparse
+from pathlib import Path
+from typing import List, Dict, Tuple
+
+import pandas as pd
 import cv2
 
-import argparse
+from dataframes import compute_time_range, trim_into_interval, repair_dropped_frames
 
-from pathlib import Path
-
-from dataframes import compute_time_range, trim_into_interval
 
 THRESHOLD_NS = 10 * 1000 * 1000
 
@@ -67,34 +67,77 @@ def extract(input_dir, output_dir):
 
 
 
-def main():
+def main(input_dir: Path, output_dir: Path):
 
-    # input_dir = "/Users/tbc/Desktop/videos/"
-    # output_dir = "/Users/tbc/Desktop/output_videos/"
-    # extract(input_dir, output_dir)
-    # exit()
+    # input_dir = Path("/Users/tbc/Desktop/videos/")
+    # output_dir = Path("/Users/tbc/Desktop/output_videos/")
+
+    #
+    # Find all CSV files in the directory and read it into a data frame (DONE)
+
+    #
+    clientIDs: List[str] = []
+    for p in input_dir.iterdir():
+        print("Found client -->", p.stem)
+        # TODO -- we could also check if the ClientID complies to the numerical format (using regex).
+        clientIDs.append(p.stem)
+
+    # Will be filled with key=clientID:str, data=Tuple[csv:DataFrame, videofile:str]
+    clients_data: Dict[str, Tuple[pd.DataFrame, str]] = dict()
+
+    for cID in clientIDs:
+        client_dir = input_dir / cID
+        CSVs = list(client_dir.glob("*.csv"))
+        MP4s = list(client_dir.glob("*.mp4"))
+
+        #
+        # Consistency check. Each clientID folder must have exactly 1 CSV and 1 mp4.
+        if len(CSVs) != 1:
+            raise Exception(f"Expecting 1 CSV file for client {cID}. Found {len(CSVs)}.")
+
+        if len(MP4s) != 1:
+            raise Exception(f"Expecting 1 MP4 file for client {cID}. Found {len(MP4s)}.")
+
+        csv_file = CSVs[0]
+        mp4_file = MP4s[1]
+
+        df: pd.DataFrame = pd.read_csv(csv_file, header=None)
+
+        clients_data[cID] = (df, str(mp4_file))
+
+
     # Define the path to the directory containing the CSV files
-    csv_path = "/Users/tbc/Desktop/test_data/"
+    # csv_path = "/Users/tbc/Desktop/test_data/"
 
-    # Find all CSV files in the directory
-    csv_files = glob.glob(csv_path + "*.csv")
+    #
+    # Repair CSVs (TODO - Mina)
+    repaired_client_data = dict()
+    for cID, (df, mp4) in clients_data:
+        repaired_df = repair_dropped_frames(df)
+        repaired_client_data[cID] = repaired_df, mp4
 
-    # Create an empty list to hold the data frames
-    dfs = []
-
-    # Loop through each CSV file and read it into a data frame
-    for file in csv_files:
-        df = pd.read_csv(file, header=None)
-        dfs.append(df)
-    
-    # Print total number of dataframes
-    print(len(dfs))
-
+    #
+    # Find time ranges (Saurabh, To test better)
     # Compute the time range
+    dfs = [df for k, (df, _) in clients_data]
     min_common, max_common = compute_time_range(dfs)
 
+    #
+    # Trim CSVs (TODO)
     # Trim the data frames to the time range and save to new CSV files
+    csv_path = output_dir / "test"
+    # TODO -- actually, we don't need to save them. We could just return them as DataFrame instances
     trim_into_interval(csv_path, dfs, min_common, max_common)
+
+
+    #
+    # Extract the frames from the original videos
+    # and rename the file names to the timestamps (DONE)
+    # extract(input_dir, output_dir)
+
+
+    #
+    # Reconstruct videos (TODO)
 
 
 #
@@ -126,21 +169,4 @@ if __name__ == "__main__":
     if not infolder.exists():
         raise Exception(f"Output folder '{outfolder}' doesn't exist.")
 
-    #
-    # Find all CSV files in the directory and read it into a data frame (DONE)
-
-    #
-    # Find time ranges (Saurabh, To test better)
-
-    #
-    # Trim CSVs (TODO)
-
-    #
-    # Repair CSVs (TODO - Mina)
-
-    #
-    # Extract the frames from the original videos
-    # and rename the file names to the timestamps (DONE)
-
-    #
-    # Reconstruct videos (TODO)
+    main(infolder, outfolder)
