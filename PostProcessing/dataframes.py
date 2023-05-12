@@ -2,8 +2,9 @@ import pandas as pd
 
 from typing import Tuple
 
+
 def repair_dropped_frames(df: pd.DataFrame) -> pd.DataFrame:
-    pass
+    return df
 
 
 # Function to find the largest value in the first entry of all dataframes
