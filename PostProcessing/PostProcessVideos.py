@@ -66,17 +66,9 @@ def extract(input_dir, output_dir):
             # Release the video file
             cap.release()
 
-
 #
 #
-#
-def main(input_dir: Path, output_dir: Path):
-
-    # input_dir = Path("/Users/tbc/Desktop/videos/")
-    # output_dir = Path("/Users/tbc/Desktop/output_videos/")
-
-    print(f"Scanning dir {str(input_dir)}...")
-
+def scan_session_dir(input_dir: Path) -> Tuple[List[str], List[pd.DataFrame], List[str]]:
     #
     # Find all CSV files in the directory and read it into a data frame
     # Use the following regular expression to check of the client ID is a 16-digit hexadecimal.
@@ -93,8 +85,6 @@ def main(input_dir: Path, output_dir: Path):
             clientIDs.append(p.stem)
         else:
             print("Discarding ", p.stem)
-
-    n_clients = len(clientIDs)
 
     #
     # Accumulates the list of dataframes and mp4 files in the same order of the client IDs.
@@ -120,6 +110,19 @@ def main(input_dir: Path, output_dir: Path):
 
         df_list.append(df)
         mp4_list.append(str(mp4_file))
+
+    return clientIDs, df_list, mp4_list
+
+#
+#
+#
+def main(input_dir: Path, output_dir: Path):
+
+    print(f"Scanning dir {str(input_dir)}...")
+    clientIDs, df_list, mp4_list = scan_session_dir(input_dir)
+
+    n_clients = len(clientIDs)
+
 
     #
     # Print collected info
