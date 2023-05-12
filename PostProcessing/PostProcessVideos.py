@@ -79,22 +79,25 @@ def main(input_dir: Path, output_dir: Path):
 
     #
     # Find all CSV files in the directory and read it into a data frame
+    # Use the following regular expression to check of the client ID is a 16-digit hexadecimal.
     clientIDpattern = "[\\da-f]" * 16
     patt = re.compile("^" + clientIDpattern + "$")
 
+    # Fill this list with the client IDs found n the directory
     clientIDs: List[str] = []
     for p in input_dir.iterdir():
+        # Check if the ClientID complies to the numerical format (using regex).
         res = patt.match(p.stem)
         if res:
             print("Found client -->", p.stem)
-            # TODO -- we could also check if the ClientID complies to the numerical format (using regex).
             clientIDs.append(p.stem)
         else:
             print("Discarding ", p.stem)
 
     n_clients = len(clientIDs)
 
-    # Will accumulate the list of dataframes and mp4 files in the same order of the client IDs.
+    #
+    # Accumulates the list of dataframes and mp4 files in the same order of the client IDs.
     df_list: List[pd.DataFrame] = []
     mp4_list: List[str] = []
 
@@ -142,8 +145,7 @@ def main(input_dir: Path, output_dir: Path):
 
     #
     # Trim CSVs (TODO)
-    # Trim the data frames to the time range and save to new CSV files
-    # TODO -- actually, we don't need to save them. We could just return them as DataFrame instances
+    # Trim the data frames to the time range
     trimmed_dataframes = trim_into_interval(repaired_df_list, min_common, max_common, THRESHOLD_NS)
 
     assert len(clientIDs) == len(trimmed_dataframes), f"Expected {len(clientIDs)} trimmed dataframes. Found f{len(trimmed_dataframes)}"
