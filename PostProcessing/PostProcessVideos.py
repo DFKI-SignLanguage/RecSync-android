@@ -85,11 +85,12 @@ def main(input_dir: Path, output_dir: Path):
     # Will be filled with key=clientID:str, data=Tuple[csv:DataFrame, videofile:str]
     clients_data: Dict[str, Tuple[pd.DataFrame, str]] = dict()
 
-    for cID in clientIDs:
+    df_list = []
+
+    for cID in clientIDs[1:]:
         client_dir = input_dir / cID
         CSVs = list(client_dir.glob("*.csv"))
         MP4s = list(client_dir.glob("*.mp4"))
-
         #
         # Consistency check. Each clientID folder must have exactly 1 CSV and 1 mp4.
         if len(CSVs) != 1:
@@ -99,36 +100,37 @@ def main(input_dir: Path, output_dir: Path):
             raise Exception(f"Expecting 1 MP4 file for client {cID}. Found {len(MP4s)}.")
 
         csv_file = CSVs[0]
-        mp4_file = MP4s[1]
+        mp4_file = MP4s[0]
 
         df: pd.DataFrame = pd.read_csv(csv_file, header=None)
 
         clients_data[cID] = (df, str(mp4_file))
-
+        df_list.append(df)
 
     # Define the path to the directory containing the CSV files
     # csv_path = "/Users/tbc/Desktop/test_data/"
 
     #
     # Repair CSVs (TODO - Mina)
-    repaired_client_data = dict()
-    for cID, (df, mp4) in clients_data:
-        repaired_df = repair_dropped_frames(df)
-        repaired_client_data[cID] = repaired_df, mp4
+    # repaired_client_data = dict()
+    # for cID, (df, mp4) in clients_data:
+    #     repaired_df = repair_dropped_frames(df)
+    #     repaired_client_data[cID] = repaired_df, mp4
+
 
     #
     # Find time ranges (Saurabh, To test better)
     # Compute the time range
-    dfs = [df for k, (df, _) in clients_data]
-    min_common, max_common = compute_time_range(dfs)
+    #dfs = [df for k, (df, _) in clients_data] 
+    min_common, max_common = compute_time_range(df_list)
 
     #
     # Trim CSVs (TODO)
     # Trim the data frames to the time range and save to new CSV files
     csv_path = output_dir / "test"
     # TODO -- actually, we don't need to save them. We could just return them as DataFrame instances
-    trim_into_interval(csv_path, dfs, min_common, max_common)
-
+    trimmed_dataframes = trim_into_interval(df_list, min_common, max_common, THRESHOLD_NS)
+    
 
     #
     # Extract the frames from the original videos
