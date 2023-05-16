@@ -2,8 +2,9 @@ import pandas as pd
 
 from typing import Tuple
 
+
 def repair_dropped_frames(df: pd.DataFrame) -> pd.DataFrame:
-    pass
+    return df
 
 def save_dataframes(dataframes, prefix='df'):
     # Generate filenames based on a pattern or numbering scheme
