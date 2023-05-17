@@ -14,60 +14,6 @@ from dataframes import compute_time_range, trim_into_interval, repair_dropped_fr
 THRESHOLD_NS = 10 * 1000 * 1000
 
 
-def extract(input_dir, output_dir):
-    # Loop over each directory in the input directory
-    for dir_name in os.listdir(input_dir):
-        dir_path = os.path.join(input_dir, dir_name)
-        if os.path.isdir(dir_path):
-            # Find the video file in the directory
-            video_filename = None
-            for filename in os.listdir(dir_path):
-                if filename.endswith(".mp4"):
-                    video_filename = filename
-                    break
-            if video_filename is None:
-                continue
-            
-            # Define the path to the input video
-            input_path = os.path.join(dir_path, video_filename)
-            
-            # Find the CSV file in the directory
-            csv_filename = os.path.splitext(video_filename)[0] + ".csv"
-            csv_path = os.path.join(dir_path, csv_filename)
-            
-            # Read the CSV file with the timestamps
-            timestamps = []
-            with open(csv_path, "r") as f:
-                reader = csv.reader(f)
-                for row in reader:
-                    timestamps.append(float(row[0]))
-            
-            # Define the output directory for the frames
-            video_name = os.path.splitext(video_filename)[0]
-            video_output_dir = os.path.join(output_dir, dir_name)
-            if not os.path.exists(video_output_dir):
-                os.makedirs(video_output_dir)
-            
-            # Open the video file
-            cap = cv2.VideoCapture(input_path)
-            if not cap.isOpened():
-                continue
-            
-            # Loop over each timestamp in the CSV file
-            for timestamp in timestamps:
-                # Extract the frame using OpenCV
-                cap.set(cv2.CAP_PROP_POS_MSEC, timestamp * 1000)
-                ret, frame = cap.read()
-                if ret:
-                    frame_name = f"{video_name}_{timestamp:.3f}.jpg"
-                    frame_path = os.path.join(video_output_dir, frame_name)
-                    cv2.imwrite(frame_path, frame)
-            
-            # Release the video file
-            cap.release()
-
-#
-#
 def scan_session_dir(input_dir: Path) -> Tuple[List[str], List[pd.DataFrame], List[str]]:
     #
     # Find all CSV files in the directory and read it into a data frame
