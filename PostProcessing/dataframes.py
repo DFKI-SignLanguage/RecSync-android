@@ -1,10 +1,56 @@
 import pandas as pd
+import numpy as np
 
 from typing import Tuple
 
+THRESHOLD_NS = 10 * 1000 * 1000 #10 milisecond
 
-def repair_dropped_frames(df: pd.DataFrame) -> pd.DataFrame:
-    return df
+def compute_time_step(video_timestamps: pd.DataFrame) -> float:
+    """
+    Compute the time steps of a video based on its timestamps.
+
+    Parameters:
+    video_timestamps (pd.DataFrame): A pandas DataFrame containing timestamps of a video.
+
+    Returns:
+    float: The time step of the video time stamps.
+    """
+
+    time_step = (video_timestamps['timestamp'].diff()).dropna().value_counts().index[0]
+
+
+    return time_step
+def repair_dropped_frames(df: pd.DataFrame,  time_step: float) -> pd.DataFrame:
+    df['timestamp'] = pd.to_datetime(df['timestamp']).astype(np.int64)
+    timestamps = df['timestamp']
+    repaired_rows = []
+
+    # Check for missing timestamps and generate them
+    for i in range(len(timestamps) - 1):
+        timestamp = timestamps.iloc[i]
+        next_timestamp = timestamps.iloc[i + 1]
+
+        repaired_rows.append([timestamp, 'Original'])
+
+        if next_timestamp - timestamp > time_step:
+            missing_timestamps_count = int((next_timestamp - timestamp)/ time_step) - 1
+            interval = (next_timestamp - timestamp) / (missing_timestamps_count + 1)
+
+            for j in range(1, missing_timestamps_count + 1):
+                new_timestamp = (timestamp + j * interval).astype(np.int64)
+                repaired_rows.append([new_timestamp, 'Generated'])
+
+    # Add the last row
+    repaired_rows.append([timestamps.iloc[-1], 'Original'])
+
+    print(len(repaired_rows))
+    # Create a new DataFrame with repaired rows
+    columns = ['timestamp', 'Generated']
+    output_df = pd.DataFrame(repaired_rows, columns=columns)
+    output_df['timestamp'] = pd.to_datetime(output_df['timestamp']).astype(np.int64)
+
+    return output_df
+
 
 def save_dataframes(dataframes, prefix='df'):
     # Generate filenames based on a pattern or numbering scheme
