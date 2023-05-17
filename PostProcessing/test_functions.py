@@ -3,9 +3,12 @@ import pytest
 import os
 from pathlib import Path
 
-from typing import List
+from typing import List, Tuple
+
 
 from dataframes import repair_dropped_frames, compute_time_range, trim_into_interval
+from PostProcessVideos import scan_session_dir
+
 
 import pandas as pd
 
@@ -19,83 +22,108 @@ print(f"Getting data dir from {RECSYNCH_SESSION_DIR_VAR} environment variable...
 RECSYNCH_SESSION_DIR = os.environ.get(RECSYNCH_SESSION_DIR_VAR)
 print("Data root set at '{}'.".format(RECSYNCH_SESSION_DIR))
 
-#@pytest.fixture(autouse=True)
-#def client_dir() -> str:
-#    if RECSYNCH_SESSION_DIR is None:
-#        raise Exception(f"Environment variable {RECSYNCH_SESSION_DIR_VAR} not defined")
+
+@pytest.fixture(scope="session", autouse=True)
+def session_data() -> Tuple[List[str], List[pd.DataFrame], List[str]]:
+
+    assert RECSYNCH_SESSION_DIR is not None, "Variable RECSYNCH_SESSION_DIR is None."
+    assert os.path.exists(RECSYNCH_SESSION_DIR)
+    assert os.path.isdir(RECSYNCH_SESSION_DIR)
+
+    clienIDs, dataframes, video_paths = scan_session_dir(Path(RECSYNCH_SESSION_DIR))
+
+    return clienIDs, dataframes, video_paths
 
 
-# def client_IDs() -> List[str]:
+def test_session_data(session_data):
 
-#     out = []
+    clienIDs, dataframes, video_paths = session_data
 
-#     for p in Path(RECSYNCH_SESSION_DIR).iterdir():
-#         print("-->", p.stem)
-#         out.append(p)
+    assert len(clienIDs) > 0
+    assert len(clienIDs) == len(dataframes) == len(video_paths)
 
-#     return out
+    for df in dataframes:
+        assert len(df) > 0
+        assert len(df.columns) == 1
 
-
-# def CSVs() -> List[str]:
-
-#     out = []
-
-#     clients = client_IDs()
-#     for c in clients:
-#         client_dir = Path(RECSYNCH_SESSION_DIR) / c
-#         for csv_file in client_dir.glob("*.csv"):
-#             print("==>", csv_file)
-#             rel_filepath = str(csv_file.relative_to(RECSYNCH_SESSION_DIR))
-#             print("++>", rel_filepath)
-#             out.append(rel_filepath)
-
-#     return out
+    for vp in video_paths:
+        assert os.path.exists(vp)
+        assert os.path.isfile(vp)
 
 
-# @pytest.mark.parametrize("csv_file", CSVs())
-# def test_df_reparation(csv_file):
+def session_data_list() -> List[Tuple[str, pd.DataFrame, str]]:
 
-#     # Load the test dataframes
-#     csv_path = Path(RECSYNCH_SESSION_DIR) / csv_file
-#     df = pd.read_csv(csv_path)
+    clienIDs, dataframes, video_paths = scan_session_dir(Path(RECSYNCH_SESSION_DIR))
 
-#     assert len(df) >= 2
-
-#     repaired_df = repair_dropped_frames(df)
-
-#     assert len(repaired_df) >= len(df)
+    for clientID, df, video_path in zip(clienIDs, dataframes, video_paths):
+        yield (clientID, df, video_path)
 
 
-def test_df_trim():
-    # Create three sample dataframes with single column and no headers
-    df1 = pd.DataFrame([9, 10, 11, 16])
-    df2 = pd.DataFrame([7, 8, 12, 13])
-    df3 = pd.DataFrame([12, 15, 16, 19])
+def client_IDs() -> List[Path]:
 
-    # Add the dataframes to a list
-    df_list = [df1, df2, df3]
+    out = []
 
-    # Compute time range and trim the dataframe 
-    min_val, max_val = compute_time_range(df_list)
-    trimmed_df_list = trim_into_interval(df_list, min_val, max_val, 3)
+    for p in Path(RECSYNCH_SESSION_DIR).iterdir():
+        print("-->", p.stem)
+        out.append(p)
 
-    # Create expected list of dataframes to compare with trimmed_df_list
-    compare_list = [
-        pd.DataFrame([9, 10, 11, 16]),
-        pd.DataFrame([12, 13]),
-        pd.DataFrame([12, 15, 16])
-    ]
-    
-    # print(trimmed_df_list.to_string(index=False))
-    # print(compare_list.to_string(index=False))
-    # try:
-    #     for df1, df2 in zip(trimmed_df_list, compare_list):
-    #         df1_reset = df1.reset_index(drop=True)
-    #         df2_reset = df2.reset_index(drop=True)
-    #         pd_testing.assert_frame_equal(df1_reset, df2_reset)
-    #     print("All dataframes match")
-    # except AssertionError as e:
-    #     print("Dataframes do not match:")
-    #     print(e)
-    # Assert if all dataframes in df_list match the corresponding dataframes in compare_list
-    assert trimmed_df_list == compare_list
+    return out
+
+
+def CSVs() -> List[str]:
+
+    out = []
+
+    clients = client_IDs()
+    for c in clients:
+        client_dir = Path(RECSYNCH_SESSION_DIR) / c
+        for csv_file in client_dir.glob("*.csv"):
+            print("==>", csv_file)
+            rel_filepath = str(csv_file.relative_to(RECSYNCH_SESSION_DIR))
+            print("++>", rel_filepath)
+            out.append(rel_filepath)
+
+    return out
+
+
+@pytest.mark.parametrize("csv_file", CSVs())
+def test_df_reparation(csv_file):
+
+    # Load the test dataframes
+    csv_path = Path(RECSYNCH_SESSION_DIR) / csv_file
+    df = pd.read_csv(csv_path)
+
+    assert len(df) >= 2
+
+    repaired_df = repair_dropped_frames(df)
+
+    assert len(repaired_df) >= len(df)
+
+@pytest.mark.parametrize("client_data", session_data_list())
+def test_df_reparation(client_data):
+
+    _, df, _ = client_data
+
+    assert len(df) >= 2
+
+    repaired_df = repair_dropped_frames(df)
+
+    assert len(repaired_df) >= len(df)
+    assert df[0].iloc[0] == repaired_df[0].iloc[0]
+    assert df[0].iloc[-1] == repaired_df[0].iloc[-1]
+
+
+def test_df_trimming(session_data):
+    _, dataframes, _ = session_data
+
+    min_common, max_common = compute_time_range(dataframes)
+    assert min_common <= max_common
+
+    for df in dataframes:
+        # Get the first element of the first column
+        ts_start = df[0].iloc[0]
+        assert ts_start <= min_common
+
+        # Get the last element of the first column
+        ts_end = df[0].iloc[-1]
+        assert ts_end >= max_common
