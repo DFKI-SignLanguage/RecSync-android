@@ -11,6 +11,8 @@ from dataframes import repair_dropped_frames, compute_time_range
 
 from PostProcessVideos import scan_session_dir
 
+from video import video_info
+
 
 RECSYNCH_SESSION_DIR_VAR = "RECSYNCH_SESSION_DIR"
 
@@ -97,3 +99,16 @@ def test_df_trimming(session_data):
         # Get the last element of the first column
         ts_end = df[0].iloc[-1]
         assert ts_end >= max_common
+
+
+@pytest.mark.parametrize("client_data", session_data_list())
+def test_video_sources(client_data):
+    _, _, video_filepath = client_data
+
+    video_path = Path(video_filepath)
+
+    assert video_path.exists()
+    assert video_path.is_file()
+
+    w, h, n_frames = video_info(video_path)
+    assert n_frames >= 2
