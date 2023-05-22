@@ -20,6 +20,8 @@ def compute_time_step(video_timestamps: pd.DataFrame) -> float:
 
 
     return time_step
+
+
 def repair_dropped_frames(df: pd.DataFrame,  time_step: float) -> pd.DataFrame:
     df['timestamp'] = pd.to_datetime(df['timestamp']).astype(np.int64)
     timestamps = df['timestamp']
