@@ -30,7 +30,7 @@ def repair_dropped_frames(df: pd.DataFrame, time_step: float) -> pd.DataFrame:
 
     # Forces the type of the timestamps to int64
     df[first_col_name] = pd.to_datetime(df[first_col_name]).astype(np.int64)
-    # Retrieves the timestamps into a Serie
+    # Retrieves the timestamps into a Series
     timestamps = df[first_col_name]
     # Will accumulate the repaired rows
     repaired_rows = []
@@ -114,11 +114,12 @@ def trim_into_interval(dfs, min_common, max_common, threshold):
     for df in dfs:
         start: pd.DataFrame = df[df.iloc[:, 0].between(min_common-threshold, min_common+threshold, inclusive='both')]
         end: pd.DataFrame = df[df.iloc[:, 0].between(max_common-threshold, max_common+threshold, inclusive='both')]
-        if not start.empty and not end.empty :
+        if not start.empty and not end.empty:
             df_start = start.stack().iloc[0]
             df_end = end.stack().iloc[-1]
             trimmed_df = df[df.iloc[:, 0].between(df_start, df_end, inclusive='both')]
             trimmed_dataframes.append(trimmed_df)
         else:
-            print("No values found within the specified range.")
+            raise Exception("No values found within the specified range.")
+
     return trimmed_dataframes

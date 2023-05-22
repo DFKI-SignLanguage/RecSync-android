@@ -5,7 +5,10 @@ from typing import List, Tuple
 import pandas as pd
 import re
 
-from dataframes import compute_time_range, trim_into_interval, repair_dropped_frames
+from dataframes import compute_time_range, trim_into_interval
+from dataframes import repair_dropped_frames, compute_time_step
+
+from video import extract_frames
 
 
 THRESHOLD_NS = 10 * 1000 * 1000
@@ -56,6 +59,7 @@ def scan_session_dir(input_dir: Path) -> Tuple[List[str], List[pd.DataFrame], Li
 
     return clientIDs, df_list, mp4_list
 
+
 #
 #
 #
@@ -76,10 +80,11 @@ def main(input_dir: Path, output_dir: Path):
         print(f"For client ID {cID}: {len(df)} frames for file {mp4}")
 
     #
-    # Repair CSVs (TODO - Mina)
+    # Repair CSVs
     repaired_df_list: List[pd.DataFrame] = []
     for cID, df in zip(clientIDs, df_list):
-        repaired_df = repair_dropped_frames(df)
+        time_step = compute_time_step(df)
+        repaired_df = repair_dropped_frames(df=df, time_step=time_step)
         repaired_df_list.append(repaired_df)
 
     assert len(clientIDs) == len(df_list) == len(mp4_list) == len(repaired_df_list)
@@ -90,7 +95,7 @@ def main(input_dir: Path, output_dir: Path):
     min_common, max_common = compute_time_range(repaired_df_list)
 
     #
-    # Trim CSVs (TODO)
+    # Trim CSVs
     # Trim the data frames to the time range
     trimmed_dataframes = trim_into_interval(repaired_df_list, min_common, max_common, THRESHOLD_NS)
 
@@ -109,7 +114,7 @@ def main(input_dir: Path, output_dir: Path):
     #
     # Extract the frames from the original videos
     # and rename the file names to the timestamps (DONE)
-    # extract(input_dir, output_dir)
+    # extract_frames(input_dir, output_dir)
 
     #
     # Reconstruct videos (TODO)

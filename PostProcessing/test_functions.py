@@ -84,6 +84,12 @@ def test_df_reparation(client_data):
     assert df[first_col_name].iloc[-1] == repaired_df[repaired_first_col_name].iloc[-1],\
         "The last element changed after reparation"
 
+    tstamps = repaired_df["timestamp"]
+    diffs = tstamps.diff().dropna()
+    assert (diffs <= time_step).all(), "some timestamps difference is longer than expected"
+
+    pass
+
 
 def test_df_trimming(session_data):
     _, dataframes, _ = session_data
