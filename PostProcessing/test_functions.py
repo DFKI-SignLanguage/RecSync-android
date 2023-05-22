@@ -2,19 +2,15 @@ import pytest
 
 import os
 from pathlib import Path
-
 from typing import List, Tuple
-
-
-from dataframes import repair_dropped_frames, compute_time_range, trim_into_interval
-from PostProcessVideos import scan_session_dir
-
 
 import pandas as pd
 
-import pandas.testing as pd_testing
+from dataframes import compute_time_step
+from dataframes import repair_dropped_frames, compute_time_range
 
-import numpy as np
+from PostProcessVideos import scan_session_dir
+
 
 RECSYNCH_SESSION_DIR_VAR = "RECSYNCH_SESSION_DIR"
 
@@ -56,61 +52,35 @@ def session_data_list() -> List[Tuple[str, pd.DataFrame, str]]:
     clienIDs, dataframes, video_paths = scan_session_dir(Path(RECSYNCH_SESSION_DIR))
 
     for clientID, df, video_path in zip(clienIDs, dataframes, video_paths):
-        yield (clientID, df, video_path)
+        yield clientID, df, video_path
 
-
-def client_IDs() -> List[Path]:
-
-    out = []
-
-    for p in Path(RECSYNCH_SESSION_DIR).iterdir():
-        print("-->", p.stem)
-        out.append(p)
-
-    return out
-
-
-def CSVs() -> List[str]:
-
-    out = []
-
-    clients = client_IDs()
-    for c in clients:
-        client_dir = Path(RECSYNCH_SESSION_DIR) / c
-        for csv_file in client_dir.glob("*.csv"):
-            print("==>", csv_file)
-            rel_filepath = str(csv_file.relative_to(RECSYNCH_SESSION_DIR))
-            print("++>", rel_filepath)
-            out.append(rel_filepath)
-
-    return out
-
-
-@pytest.mark.parametrize("csv_file", CSVs())
-def test_df_reparation(csv_file):
-
-    # Load the test dataframes
-    csv_path = Path(RECSYNCH_SESSION_DIR) / csv_file
-    df = pd.read_csv(csv_path)
-
-    assert len(df) >= 2
-
-    repaired_df = repair_dropped_frames(df)
-
-    assert len(repaired_df) >= len(df)
 
 @pytest.mark.parametrize("client_data", session_data_list())
 def test_df_reparation(client_data):
 
     _, df, _ = client_data
-
     assert len(df) >= 2
 
-    repaired_df = repair_dropped_frames(df)
+    first_col_name = df.columns[0]
 
-    assert len(repaired_df) >= len(df)
-    assert df[0].iloc[0] == repaired_df[0].iloc[0]
-    assert df[0].iloc[-1] == repaired_df[0].iloc[-1]
+    time_step = compute_time_step(df)
+    assert time_step > 0
+
+    repaired_df = repair_dropped_frames(df, time_step)
+
+    assert len(repaired_df) > 2
+
+    assert len(repaired_df) >= len(df), "Dataframe size was reduced after reparation."
+
+    repaired_first_col_name = repaired_df.columns[0]
+    repaired_second_col_name = repaired_df.columns[1]
+    assert repaired_first_col_name == "timestamp"
+    assert repaired_second_col_name == "generated"
+
+    assert df[first_col_name].iloc[0] == repaired_df[repaired_first_col_name].iloc[0],\
+        "The first element changed after reparation"
+    assert df[first_col_name].iloc[-1] == repaired_df[repaired_first_col_name].iloc[-1],\
+        "The last element changed after reparation"
 
 
 def test_df_trimming(session_data):

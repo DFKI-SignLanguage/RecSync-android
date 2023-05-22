@@ -3,7 +3,8 @@ import numpy as np
 
 from typing import Tuple
 
-THRESHOLD_NS = 10 * 1000 * 1000 #10 milisecond
+THRESHOLD_NS = 10 * 1000 * 1000  # 10 milisecond
+
 
 def compute_time_step(video_timestamps: pd.DataFrame) -> float:
     """
@@ -16,15 +17,18 @@ def compute_time_step(video_timestamps: pd.DataFrame) -> float:
     float: The time step of the video time stamps.
     """
 
-    time_step = (video_timestamps['timestamp'].diff()).dropna().value_counts().index[0]
-
+    first_col_name = video_timestamps.columns[0]
+    time_step = (video_timestamps[first_col_name].diff()).dropna().value_counts().index[0]
 
     return time_step
 
 
 def repair_dropped_frames(df: pd.DataFrame,  time_step: float) -> pd.DataFrame:
-    df['timestamp'] = pd.to_datetime(df['timestamp']).astype(np.int64)
-    timestamps = df['timestamp']
+
+    first_col_name = df.columns[0]
+
+    df[first_col_name] = pd.to_datetime(df[first_col_name]).astype(np.int64)
+    timestamps = df[first_col_name]
     repaired_rows = []
 
     # Check for missing timestamps and generate them
@@ -47,7 +51,7 @@ def repair_dropped_frames(df: pd.DataFrame,  time_step: float) -> pd.DataFrame:
 
     print(len(repaired_rows))
     # Create a new DataFrame with repaired rows
-    columns = ['timestamp', 'Generated']
+    columns = ['timestamp', 'generated']
     output_df = pd.DataFrame(repaired_rows, columns=columns)
     output_df['timestamp'] = pd.to_datetime(output_df['timestamp']).astype(np.int64)
 

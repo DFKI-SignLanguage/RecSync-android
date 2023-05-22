@@ -1,11 +1,8 @@
-import os
-import csv
 import argparse
 from pathlib import Path
-from typing import List, Dict, Tuple
+from typing import List, Tuple
 
 import pandas as pd
-import cv2
 import re
 
 from dataframes import compute_time_range, trim_into_interval, repair_dropped_frames
