@@ -44,7 +44,7 @@ def repair_dropped_frames(df: pd.DataFrame, time_step: float) -> pd.DataFrame:
         # If the next timestamp exceeds the expected time step
         if next_timestamp - timestamp > time_step:
             # Estimate the number of missing frames
-            missing_timestamps_count = int((next_timestamp - timestamp) / time_step) - 1
+            missing_timestamps_count = round((next_timestamp - timestamp) / time_step) - 1
             # Estimate a time interval between them (will be very similar to the input time_step
             interval = (next_timestamp - timestamp) / (missing_timestamps_count + 1)
             # Generate the missing lines
