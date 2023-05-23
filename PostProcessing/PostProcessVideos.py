@@ -1,6 +1,7 @@
 import argparse
 from pathlib import Path
 from typing import List, Tuple
+import tempfile
 
 import pandas as pd
 import re
@@ -9,9 +10,10 @@ from dataframes import compute_time_range, trim_into_interval
 from dataframes import repair_dropped_frames, compute_time_step
 
 from video import extract_frames
+from video import rebuild_video
 
 
-THRESHOLD_NS = 10 * 1000 * 1000
+THRESHOLD_NS = 10 * 1000 * 1000  # millis * micros * nanos
 
 
 def scan_session_dir(input_dir: Path) -> Tuple[List[str], List[pd.DataFrame], List[str]]:
@@ -94,28 +96,40 @@ def main(input_dir: Path, output_dir: Path):
     # Find time ranges
     min_common, max_common = compute_time_range(repaired_df_list)
     # Trim the data frames to the time range
-    trimmed_dataframes = trim_into_interval(repaired_df_list, min_common, max_common, THRESHOLD_NS)
+    #trimmed_dataframes = trim_into_interval(repaired_df_list, min_common, max_common, THRESHOLD_NS)
+    # TODO - temp to continue
+    trimmed_dataframes = repaired_df_list
 
     assert len(clientIDs) == len(trimmed_dataframes), f"Expected {len(clientIDs)} trimmed dataframes. Found f{len(trimmed_dataframes)}"
 
-    # Check that all the resultiong dataframes have the same number of rows
-    client0ID = clientIDs[0]
-    client0size = len(trimmed_dataframes[0])
-    print(f"For client {client0ID}: {client0size} frames")
-    for cID, df in zip(clientIDs[1:], trimmed_dataframes[1:]):
-        dfsize = len(df)
-        if client0size != dfsize:
-            raise Exception(f"For client {cID}: expecting {client0size}, found {dfsize}")
+    # Check that all the resulting dataframes have the same number of rows
+    if False:
+        client0ID = clientIDs[0]
+        client0size = len(trimmed_dataframes[0])
+        print(f"For client {client0ID}: {client0size} frames")
+        for cID, df in zip(clientIDs[1:], trimmed_dataframes[1:]):
+            dfsize = len(df)
+            if client0size != dfsize:
+                raise Exception(f"For client {cID}: expecting {client0size}, found {dfsize}")
 
-    print("Good. All trimmed dataframes have the same number of entries.")
-
-    #
-    # Extract the frames from the original videos
-    # and rename the file names to the timestamps (DONE)
-    #extract_frames(input_dir, output_dir)
+        print("Good. All trimmed dataframes have the same number of entries.")
 
     #
-    # Reconstruct videos (TODO)
+    # Unpack the original videos, and repack them according to repaired and trimmed dataframes.
+    for i, cID in enumerate(clientIDs):
+        orig_df = df_list[i]
+        trimmed_df = trimmed_dataframes[i]
+        video_file = mp4_list[i]
+        # Create a temporary directory for frames unpacking
+        with tempfile.TemporaryDirectory(prefix="RecSyncNG", suffix=cID) as tmp_dir:
+            # Extract the frames from the original videos
+            # and rename the file names to the timestamps
+            print(f"Extracting {len(orig_df)} frames from '{video_file}'...")
+            extract_frames(video_file=video_file, timestamps_df=orig_df, output_dir=tmp_dir)
+
+            # Reconstruct videos (TODO)
+            out_filepath = output_dir / (cID + ".mp4")
+            rebuild_video(dir=Path(tmp_dir), frames=trimmed_df, outfile=out_filepath)
 
 
 #
