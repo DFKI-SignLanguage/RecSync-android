@@ -90,17 +90,15 @@ def main(input_dir: Path, output_dir: Path):
     assert len(clientIDs) == len(df_list) == len(mp4_list) == len(repaired_df_list)
 
     #
-    # Find time ranges
-    # Compute the time range
-    min_common, max_common = compute_time_range(repaired_df_list)
-
-    #
     # Trim CSVs
+    # Find time ranges
+    min_common, max_common = compute_time_range(repaired_df_list)
     # Trim the data frames to the time range
     trimmed_dataframes = trim_into_interval(repaired_df_list, min_common, max_common, THRESHOLD_NS)
 
     assert len(clientIDs) == len(trimmed_dataframes), f"Expected {len(clientIDs)} trimmed dataframes. Found f{len(trimmed_dataframes)}"
 
+    # Check that all the resultiong dataframes have the same number of rows
     client0ID = clientIDs[0]
     client0size = len(trimmed_dataframes[0])
     print(f"For client {client0ID}: {client0size} frames")
@@ -114,7 +112,7 @@ def main(input_dir: Path, output_dir: Path):
     #
     # Extract the frames from the original videos
     # and rename the file names to the timestamps (DONE)
-    # extract_frames(input_dir, output_dir)
+    #extract_frames(input_dir, output_dir)
 
     #
     # Reconstruct videos (TODO)
