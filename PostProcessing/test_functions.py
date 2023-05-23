@@ -50,6 +50,11 @@ def test_session_data(session_data):
         assert os.path.exists(vp)
         assert os.path.isfile(vp)
 
+    for vp, df in zip(video_paths, dataframes):
+        _, _, num_frames = video_info(vp)
+        num_rows = len(df)
+        assert num_frames == num_rows, f"Num of frames in the video ({num_frames}) differs from the num of rows in the dataframe ({num_rows})."
+
 
 def session_data_list() -> List[Tuple[str, pd.DataFrame, str]]:
 
@@ -89,8 +94,6 @@ def test_df_reparation(client_data):
     tstamps = repaired_df["timestamp"]
     diffs = tstamps.diff().dropna()
     assert (diffs <= (time_step + THRESHOLD_NS)).all(), "some timestamps difference is longer than expected"
-
-    pass
 
 
 def test_df_trimming(session_data):
