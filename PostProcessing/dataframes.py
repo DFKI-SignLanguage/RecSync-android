@@ -3,8 +3,6 @@ import numpy as np
 
 from typing import Tuple
 
-THRESHOLD_NS = 10 * 1000 * 1000  # 10 milisecond
-
 
 def compute_time_step(video_timestamps: pd.DataFrame) -> float:
     """

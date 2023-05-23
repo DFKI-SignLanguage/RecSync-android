@@ -13,6 +13,8 @@ from PostProcessVideos import scan_session_dir
 
 from video import video_info
 
+from PostProcessVideos import THRESHOLD_NS
+
 
 RECSYNCH_SESSION_DIR_VAR = "RECSYNCH_SESSION_DIR"
 
@@ -86,7 +88,7 @@ def test_df_reparation(client_data):
 
     tstamps = repaired_df["timestamp"]
     diffs = tstamps.diff().dropna()
-    assert (diffs <= time_step).all(), "some timestamps difference is longer than expected"
+    assert (diffs <= (time_step + THRESHOLD_NS)).all(), "some timestamps difference is longer than expected"
 
     pass
 

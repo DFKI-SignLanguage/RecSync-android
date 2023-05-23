@@ -90,7 +90,7 @@ def main(input_dir: Path, output_dir: Path):
     assert len(clientIDs) == len(df_list) == len(mp4_list) == len(repaired_df_list)
 
     #
-    # Find time ranges (Saurabh, To test better)
+    # Find time ranges
     # Compute the time range
     min_common, max_common = compute_time_range(repaired_df_list)
 
