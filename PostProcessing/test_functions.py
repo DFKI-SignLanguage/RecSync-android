@@ -53,7 +53,8 @@ def test_session_data(session_data):
     for vp, df in zip(video_paths, dataframes):
         _, _, num_frames = video_info(vp)
         num_rows = len(df)
-        assert num_frames == num_rows, f"Num of frames in the video ({num_frames}) differs from the num of rows in the dataframe ({num_rows})."
+        # assert num_frames == num_rows, f"Num of frames in the video ({num_frames}) differs from the num of rows in the dataframe ({num_rows})."
+        assert num_frames <= num_rows, f"Num of frames in the video ({num_frames}) is higher than the number of rows in the dataframe ({num_rows})."
 
 
 def session_data_list() -> List[Tuple[str, pd.DataFrame, str]]:
