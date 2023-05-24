@@ -6,7 +6,7 @@ import tempfile
 import pandas as pd
 import re
 
-from dataframes import compute_time_range, trim_into_interval
+from dataframes import compute_time_range, trim_repaired_into_interval
 from dataframes import repair_dropped_frames, compute_time_step
 
 from video import extract_frames
@@ -96,23 +96,20 @@ def main(input_dir: Path, output_dir: Path):
     # Find time ranges
     min_common, max_common = compute_time_range(repaired_df_list)
     # Trim the data frames to the time range
-    #trimmed_dataframes = trim_into_interval(repaired_df_list, min_common, max_common, THRESHOLD_NS)
-    # TODO - temp to continue
-    trimmed_dataframes = repaired_df_list
+    trimmed_dataframes = trim_repaired_into_interval(repaired_df_list, min_common, max_common, THRESHOLD_NS)
 
     assert len(clientIDs) == len(trimmed_dataframes), f"Expected {len(clientIDs)} trimmed dataframes. Found f{len(trimmed_dataframes)}"
 
     # Check that all the resulting dataframes have the same number of rows
-    if False:
-        client0ID = clientIDs[0]
-        client0size = len(trimmed_dataframes[0])
-        print(f"For client {client0ID}: {client0size} frames")
-        for cID, df in zip(clientIDs[1:], trimmed_dataframes[1:]):
-            dfsize = len(df)
-            if client0size != dfsize:
-                raise Exception(f"For client {cID}: expecting {client0size}, found {dfsize}")
+    client0ID = clientIDs[0]
+    client0size = len(trimmed_dataframes[0])
+    print(f"For client {client0ID}: {client0size} frames")
+    for cID, df in zip(clientIDs[1:], trimmed_dataframes[1:]):
+        dfsize = len(df)
+        if client0size != dfsize:
+            raise Exception(f"For client {cID}: expecting {client0size} frames, found {dfsize}")
 
-        print("Good. All trimmed dataframes have the same number of entries.")
+    print("Good. All trimmed dataframes have the same number of entries.")
 
     #
     # Unpack the original videos, and repack them according to repaired and trimmed dataframes.
@@ -127,9 +124,12 @@ def main(input_dir: Path, output_dir: Path):
             print(f"Extracting {len(orig_df)} frames from '{video_file}'...")
             extract_frames(video_file=video_file, timestamps_df=orig_df, output_dir=tmp_dir)
 
-            # Reconstruct videos (TODO)
-            out_filepath = output_dir / (cID + ".mp4")
-            rebuild_video(dir=Path(tmp_dir), frames=trimmed_df, outfile=out_filepath)
+            # Reconstruct videos
+            video_out_filepath = output_dir / (cID + ".mp4")
+            rebuild_video(dir=Path(tmp_dir), frames=trimmed_df, outfile=video_out_filepath)
+            # And save also the CSV
+            csv_out_filepath = video_out_filepath.with_suffix(".csv")
+            trimmed_df.to_csv(path_or_buf=csv_out_filepath, header=True, index=False)
 
 
 #

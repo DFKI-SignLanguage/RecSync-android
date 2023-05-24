@@ -37,9 +37,6 @@ def video_info(video_path: str) -> Tuple[int, int, int]:
 
 def extract_frames(video_file: str, timestamps_df: pd.DataFrame, output_dir: str):
 
-    #_, _, num_frames = video_info(video_file)
-    #print("NUM:", num_frames, len(timestamps_df))
-
     # Open the video file
     cap = cv2.VideoCapture(video_file)
     if not cap.isOpened():
@@ -50,18 +47,55 @@ def extract_frames(video_file: str, timestamps_df: pd.DataFrame, output_dir: str
 
     # Loop over each timestamp in the CSV file
     for fnum, timestamp in enumerate(timestamps):
-        # Extract the frame using OpenCV
-        #cap.set(cv2.CAP_PROP_POS_MSEC, timestamp * 1000)
+        # Extract the next frame
         ret, frame = cap.read()
         if ret:
             frame_path = os.path.join(output_dir, str(timestamp) + ".jpg")
             cv2.imwrite(frame_path, frame)
+
         else:
             print(f"At frame {fnum}, no more frames to extract from video '{video_file}'. Expected {len(timestamps)} frames.")
-            #raise Exception(f"At frame {fnum}, no more frames to extract from video '{video_file}'. Expected {len(timestamps)} frames.")
-    
+
     # Release the video file
     cap.release()
+
+
+def extract_frames_ffmpeg(video_file: str, timestamps_df: pd.DataFrame, output_dir: str):
+    video_w, video_h, _ = video_info(video_file)
+
+    ffmpeg_read_process = (
+        ffmpeg
+        .input(video_file)
+        .output('pipe:', format='rawvideo', pix_fmt='rgb24')
+        .run_async(pipe_stdout=True)
+    )
+
+    first_col_name = timestamps_df.columns[0]
+    timestamps: pd.Series = timestamps_df[first_col_name]
+
+    # Loop over each timestamp in the CSV file
+    for fnum, timestamp in enumerate(timestamps):
+        in_bytes = ffmpeg_read_process.stdout.read(video_w * video_h * 3)
+        if in_bytes:
+
+            in_frame = (
+                np
+                .frombuffer(in_bytes, np.uint8)
+                .reshape([video_h, video_w, 3])
+            )
+
+            frame_path = os.path.join(output_dir, str(timestamp) + ".jpg")
+            in_frame = cv2.cvtColor(in_frame, cv2.COLOR_RGB2BGR)
+            cv2.imwrite(frame_path, in_frame)
+            #PIL.Image.fromarray(in_frame, 'RGB').save(frame_path)
+
+        else:
+            print(f"At frame {fnum}, no more frames to extract from video '{video_file}'. Expected {len(timestamps)} frames.")
+
+    if ffmpeg_read_process is not None:
+        ffmpeg_read_process.stdout.close()
+        ffmpeg_read_process.wait()
+        ffmpeg_read_process = None
 
 
 def rebuild_video(dir: Path, frames: pd.DataFrame, outfile: Path) -> None:
@@ -102,7 +136,6 @@ def rebuild_video(dir: Path, frames: pd.DataFrame, outfile: Path) -> None:
                                                   #x=50, y=50,
                                                   x="(w-tw)/2", y="h-(2*lh)",
                                                   fontfile="Arial.ttf", fontsize=font_width, fontcolor="white",
-                                                  #boxcolor="0x00000099",
                                                   box=1, boxborderw=2, boxcolor="Black@0.6")
 
                                         .output(str(outfile), pix_fmt='yuv420p')
