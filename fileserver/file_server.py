@@ -60,5 +60,16 @@ def upload_file():
    resp.status_code = 201
    return resp
 
+@app.route('/namelist', methods=['POST'])
+def print_filelist():
+    print("CLIENT ID:" + request.form.get("client_id", "") +" have these FILES:" +  request.form.get("file_list", [])  )
+    resp = jsonify({'message' : 'File List Printed'})
+    resp.status_code = 200
+    return resp
+
+
+
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000,debug=True)
