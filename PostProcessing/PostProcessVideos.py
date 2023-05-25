@@ -11,6 +11,7 @@ from dataframes import repair_dropped_frames, compute_time_step
 
 from video import extract_frames
 from video import rebuild_video
+from video import extract_video_info
 
 
 THRESHOLD_NS = 10 * 1000 * 1000  # millis * micros * nanos
@@ -125,8 +126,10 @@ def main(input_dir: Path, output_dir: Path):
             extract_frames(video_file=video_file, timestamps_df=orig_df, output_dir=tmp_dir)
 
             # Reconstruct videos
+            vinfo = extract_video_info(video_path=video_file)
+            input_fps = vinfo.fps
             video_out_filepath = output_dir / (cID + ".mp4")
-            rebuild_video(dir=Path(tmp_dir), frames=trimmed_df, outfile=video_out_filepath)
+            rebuild_video(dir=Path(tmp_dir), frames=trimmed_df, fps=input_fps, outfile=video_out_filepath)
             # And save also the CSV
             csv_out_filepath = video_out_filepath.with_suffix(".csv")
             trimmed_df.to_csv(path_or_buf=csv_out_filepath, header=True, index=False)
