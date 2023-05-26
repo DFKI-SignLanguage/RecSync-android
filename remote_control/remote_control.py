@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import QMessageBox
 import websocket
 import rel
 import threading
-
+CONNECTION_URL = "ws://192.168.5.3:7867/remotecon"
 class RemoteController(object):
 
     def __init__(self, MainWindow ) -> None:
@@ -103,26 +103,31 @@ class RemoteController(object):
            return False
         return True
 
-    def asyncTask(self, f_stop):
-        self.ws.send("PING")
-        if not f_stop.is_set():
-                # call f() again in 60 seconds
-                threading.Timer(5, self.asyncTask, [f_stop]).start()
+    def phaseAlign(self):
+        try:
+            self.ws.send("PHASE_ALIGN")
+        except Exception as e:
+            self.show_popup()
+            with open('last_prefix.txt','w+') as file:
+                file.writelines(self.download_prefix_text.toPlainText())
+            sys.exit()
+
+
+
+#     def asyncTask(self, f_stop):
+#         self.ws.send("PING")
+#         self.ws.recv()
+#         if not f_stop.is_set():
+#                 # call f() again in 60 seconds
+#                 threading.Timer(5, self.asyncTask, [f_stop]).start()
 
     def setupUi(self, MainWindow):
         # Setup the WEB SOCKET
         #self.ws = websocket.WebSocketApp("ws://192.168.5.2:7867/remotecon")
         self.ws = websocket.WebSocket()
-        self.ws.connect("ws://192.168.5.2:7867/remotecon")
-        f_stop = threading.Event()
-        self.asyncTask(f_stop)
-#         self.ws = websocket.WebSocketApp("ws://192.168.5.2:7867/remotecon")
-#
-#         self.ws.run_forever(ping_interval=1)
-#         self.ws.run_forever(dispatcher=rel, reconnect=5)
-#         rel.signal(2, rel.abort)
-#         rel.dispatch()
-#         await ws.send('2')
+        self.ws.connect(CONNECTION_URL)
+#         f_stop = threading.Event()
+#         self.asyncTask(f_stop)
         # Setup the GUI
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(800, 800)
@@ -131,7 +136,7 @@ class RemoteController(object):
         self.label = QtWidgets.QLabel(self.centralwidget)
         self.label.setGeometry(QtCore.QRect(290, 10, 161, 61))
         font = QtGui.QFont()
-        font.setFamily("Source Code Pro")
+        #font.setFamily("Source Code Pro")
         font.setPointSize(19)
         self.label.setFont(font)
         self.label.setObjectName("label")
@@ -177,10 +182,16 @@ class RemoteController(object):
         self.download_btn.clicked.connect(self.downloadBtn)
 
         self.delete_btn = QtWidgets.QPushButton(self.centralwidget)
-        self.delete_btn.setGeometry(QtCore.QRect(280, 520, 161, 50))
+        self.delete_btn.setGeometry(QtCore.QRect(450, 520, 161, 50))
         self.delete_btn.setFont(font)
         self.delete_btn.setObjectName("pushButton_6")
         self.delete_btn.clicked.connect(self.delete_all_btn)
+
+        self.phase_align_btn = QtWidgets.QPushButton(self.centralwidget)
+        self.phase_align_btn.setGeometry(QtCore.QRect(120,520, 161, 50))
+        self.phase_align_btn.setFont(font)
+        self.phase_align_btn.setObjectName("pushButton_phase")
+        self.phase_align_btn.clicked.connect(self.phaseAlign)
 
 
         self.status_label = QtWidgets.QPlainTextEdit(self.centralwidget)
@@ -218,13 +229,13 @@ class RemoteController(object):
         self.download_prefix_text.setPlaceholderText(_translate("MainWindow", " Enter Session Prefix"))
         self.download_btn.setText(_translate("MainWindow", "Download"))
         self.prefix_list_btn.setText(_translate("MainWindow", "Prefix List"))
+        self.phase_align_btn.setText(_translate("MainWindow", "Phase Align"))
         self.status_label.setPlaceholderText(_translate("MainWindow", "No status "))
 
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
-
     rc = RemoteController(MainWindow)
     rc.setupUi(MainWindow)
 

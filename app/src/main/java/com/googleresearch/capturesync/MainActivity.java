@@ -431,7 +431,7 @@ public class MainActivity extends Activity {
                 ((SoftwareSyncLeader) softwareSyncController.softwareSync)
                         .broadcastRpc(
                                 SoftwareSyncController.METHOD_EMPTY_DEVICE,
-                                "0");
+                                "");
 
                 break;
 
@@ -447,6 +447,10 @@ public class MainActivity extends Activity {
             case "PING" :
                 Log.i(TAG,"handling the message in PING" );
                 wsMessageContext.send("PONG");
+                break;
+            case "PHASE_ALIGN" :
+                ((SoftwareSyncLeader) softwareSyncController.softwareSync)
+                        .broadcastRpc(SoftwareSyncController.METHOD_DO_PHASE_ALIGN, "");
                 break;
         }
     }
