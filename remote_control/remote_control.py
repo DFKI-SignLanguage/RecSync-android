@@ -20,17 +20,20 @@ class RemoteController(object):
     def __init__(self, MainWindow ) -> None:
         self.setupUi(MainWindow)
 
+    def save_last_prefix_text(self):
+        with open('last_prefix.txt','w+') as file:
+            file.writelines(self.download_prefix_text.toPlainText())
+
     def show_popup(self):
-    		msg = QMessageBox()
-    		msg.setWindowTitle("Connection Error")
-    		msg.setText("Seems like your websocket connection is closed")
-    		msg.setIcon(QMessageBox.Critical)
-    		msg.exec_()
+        msg = QMessageBox()
+        msg.setWindowTitle("Connection Error")
+        msg.setText("Seems like your websocket connection is closed")
+        msg.setIcon(QMessageBox.Critical)
+        msg.exec_()
 
     def startBtn(self):
         session_prefix = self.download_prefix_text.toPlainText()
-        with open('last_prefix.txt','w+') as file:
-            file.writelines(session_prefix)
+        self.save_last_prefix_text()
         if self.isPrefix(session_prefix):
             try:
                 self.ws.send("START_REC@@"+session_prefix)
@@ -38,27 +41,28 @@ class RemoteController(object):
                 self.label.adjustSize()
             except Exception as e:
                 self.show_popup()
+                self.save_last_prefix_text()
                 sys.exit()
 
     def stopBtn(self):
-        with open('last_prefix.txt','w+') as file:
-            file.writelines(self.download_prefix_text.toPlainText())
+        self.save_last_prefix_text()
         self.label.setText('Recording Stopped')
         try:
             self.ws.send("STOP_REC")
         except Exception as e:
             self.show_popup()
+            self.save_last_prefix_text()
             sys.exit()
 
     def statusBtn(self):
-        with open('last_prefix.txt','w+') as file:
-            file.writelines(self.download_prefix_text.toPlainText())
+        self.save_last_prefix_text()
         try:
             self.ws.send("STATUS")
             message = self.ws.recv()
             self.status_label.setPlainText(message)
         except Exception as e:
             self.show_popup()
+            self.save_last_prefix_text()
             sys.exit()
 
 
@@ -70,30 +74,31 @@ class RemoteController(object):
         msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
         msgBox.setDefaultButton(QMessageBox.Cancel)
         ret = msgBox.exec()
-        with open('last_prefix.txt','w+') as file:
-            file.writelines(self.download_prefix_text.toPlainText())
+        self.save_last_prefix_text()
         if ret == QMessageBox.Ok:
             try:
                 self.ws.send("DELETE_ALL")
             except Exception as e:
                 self.show_popup()
+                self.save_last_prefix_text()
                 sys.exit()
 
     def clearStatusBtn(self):
         self.status_label.setPlainText("")
 
     def prefixList(self):
-        with open('last_prefix.txt','w+') as file:
-            file.writelines(self.download_prefix_text.toPlainText())
+        self.save_last_prefix_text()
         try:
             self.ws.send("PREFIX_LIST")
         except Exception as e:
             self.show_popup()
+            self.save_last_prefix_text()
             sys.exit()
 
     def downloadBtn(self):
         endpoint = self.api_input.toPlainText()
         download_prefix = self.download_prefix_text.toPlainText()
+        self.save_last_prefix_text()
         if self.isPrefix(download_prefix):
             self.ws.send("UPLOAD@@"+endpoint+","+download_prefix)
 
@@ -106,12 +111,12 @@ class RemoteController(object):
         return True
 
     def phaseAlign(self):
-        with open('last_prefix.txt','w+') as file:
-            file.writelines(self.download_prefix_text.toPlainText())
+        self.save_last_prefix_text()
         try:
             self.ws.send("PHASE_ALIGN")
         except Exception as e:
             self.show_popup()
+            self.save_last_prefix_text()
             sys.exit()
 
 
