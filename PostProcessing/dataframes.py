@@ -120,4 +120,6 @@ def trim_repaired_into_interval(dfs, min_common, max_common, threshold) -> List[
         trimmed_df = df[selection_mask]
         trimmed_dataframes.append(trimmed_df)
 
+        assert len(trimmed_dataframes) <= len(df)
+
     return trimmed_dataframes
