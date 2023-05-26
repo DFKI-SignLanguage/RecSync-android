@@ -34,11 +34,13 @@ class RemoteController(object):
     def startBtn(self):
         session_prefix = self.download_prefix_text.toPlainText()
         self.save_last_prefix_text()
-        if self.isPrefix(session_prefix):
+        if self.isPrefix(session_prefix) and self.start_btn.isEnabled():
             try:
                 self.ws.send("START_REC@@"+session_prefix)
                 self.label.setText('Recording Started')
                 self.label.adjustSize()
+                self.start_btn.setEnabled(False)
+                self.stop_btn.setEnabled(True)
             except Exception as e:
                 self.show_popup()
                 self.save_last_prefix_text()
@@ -46,13 +48,16 @@ class RemoteController(object):
 
     def stopBtn(self):
         self.save_last_prefix_text()
-        self.label.setText('Recording Stopped')
-        try:
-            self.ws.send("STOP_REC")
-        except Exception as e:
-            self.show_popup()
-            self.save_last_prefix_text()
-            sys.exit()
+        if self.stop_btn.isEnabled() and not self.start_btn.isEnabled():
+            self.label.setText('Recording Stopped')
+            self.stop_btn.setEnabled(False)
+            self.start_btn.setEnabled(True)
+            try:
+                self.ws.send("STOP_REC")
+            except Exception as e:
+                self.show_popup()
+                self.save_last_prefix_text()
+                sys.exit()
 
     def statusBtn(self):
         self.save_last_prefix_text()
@@ -157,6 +162,7 @@ class RemoteController(object):
         self.stop_btn.setFont(font)
         self.stop_btn.setObjectName("pushButton_2")
         self.stop_btn.clicked.connect(self.stopBtn)
+        self.stop_btn.setEnabled(False)
         self.status_btn = QtWidgets.QPushButton(self.centralwidget)
         self.status_btn.setGeometry(QtCore.QRect(280, 200,  161, 61))
         self.status_btn.setFont(font)
