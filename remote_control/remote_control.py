@@ -29,6 +29,8 @@ class RemoteController(object):
 
     def startBtn(self):
         session_prefix = self.download_prefix_text.toPlainText()
+        with open('last_prefix.txt','w+') as file:
+            file.writelines(session_prefix)
         if self.isPrefix(session_prefix):
             try:
                 self.ws.send("START_REC@@"+session_prefix)
@@ -36,30 +38,30 @@ class RemoteController(object):
                 self.label.adjustSize()
             except Exception as e:
                 self.show_popup()
-                with open('last_prefix.txt','w+') as file:
-                    file.writelines(session_prefix)
                 sys.exit()
 
     def stopBtn(self):
+        with open('last_prefix.txt','w+') as file:
+            file.writelines(self.download_prefix_text.toPlainText())
         self.label.setText('Recording Stopped')
         try:
             self.ws.send("STOP_REC")
         except Exception as e:
             self.show_popup()
-            with open('last_prefix.txt','w+') as file:
-                file.writelines(self.download_prefix_text.toPlainText())
             sys.exit()
 
     def statusBtn(self):
+        with open('last_prefix.txt','w+') as file:
+            file.writelines(self.download_prefix_text.toPlainText())
         try:
             self.ws.send("STATUS")
             message = self.ws.recv()
             self.status_label.setPlainText(message)
         except Exception as e:
             self.show_popup()
-            with open('last_prefix.txt','w+') as file:
-                file.writelines(self.download_prefix_text.toPlainText())
             sys.exit()
+
+
 
     def delete_all_btn(self):
         msgBox = QMessageBox()
@@ -68,25 +70,25 @@ class RemoteController(object):
         msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
         msgBox.setDefaultButton(QMessageBox.Cancel)
         ret = msgBox.exec()
+        with open('last_prefix.txt','w+') as file:
+            file.writelines(self.download_prefix_text.toPlainText())
         if ret == QMessageBox.Ok:
             try:
                 self.ws.send("DELETE_ALL")
             except Exception as e:
                 self.show_popup()
-                with open('last_prefix.txt','w+') as file:
-                    file.writelines(self.download_prefix_text.toPlainText())
                 sys.exit()
 
     def clearStatusBtn(self):
         self.status_label.setPlainText("")
 
     def prefixList(self):
+        with open('last_prefix.txt','w+') as file:
+            file.writelines(self.download_prefix_text.toPlainText())
         try:
             self.ws.send("PREFIX_LIST")
         except Exception as e:
             self.show_popup()
-            with open('last_prefix.txt','w+') as file:
-                file.writelines(self.download_prefix_text.toPlainText())
             sys.exit()
 
     def downloadBtn(self):
@@ -104,12 +106,12 @@ class RemoteController(object):
         return True
 
     def phaseAlign(self):
+        with open('last_prefix.txt','w+') as file:
+            file.writelines(self.download_prefix_text.toPlainText())
         try:
             self.ws.send("PHASE_ALIGN")
         except Exception as e:
             self.show_popup()
-            with open('last_prefix.txt','w+') as file:
-                file.writelines(self.download_prefix_text.toPlainText())
             sys.exit()
 
 
