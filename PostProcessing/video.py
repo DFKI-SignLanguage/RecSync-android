@@ -1,6 +1,7 @@
 import cv2
 import os
 from pathlib import Path
+from collections import namedtuple
 
 import pandas as pd
 import numpy as np
@@ -35,7 +36,43 @@ def video_info(video_path: str) -> Tuple[int, int, int]:
     return video_w, video_h, n_frames
 
 
-def extract_frames(video_file: str, timestamps_df: pd.DataFrame, output_dir: str):
+VideoInfo = namedtuple("VideoInfo", ["width", "height", "n_frames", "fps", "codec"])
+
+
+def extract_video_info(video_path: str) -> VideoInfo:
+    """
+    Uses the ffmpeg.probe function to retrieve information about a video file.
+
+    :param video_path: Path to a valid video file
+    :return: An instance of a VideoTuple named tuple with self-explaining information.
+    """
+
+    #
+    # Fetch video info
+    info = ffmpeg.probe(video_path)
+    # Get the list of all video streams
+    video_streams = [stream for stream in info['streams'] if stream['codec_type'] == 'video']
+    if len(video_streams) == 0:
+        raise BaseException("No video streams found in file '{}'".format(video_path))
+
+    # retrieve the first stream of type 'video'
+    info_video = video_streams[0]
+
+    framerate_ratio_str = info_video['r_frame_rate']
+    fps = eval(framerate_ratio_str)
+
+    out = VideoInfo(
+        width=info_video['width'],
+        height=info_video['height'],
+        n_frames=int(info_video['nb_frames']),
+        fps=fps,
+        codec=info_video['codec_name']
+    )
+
+    return out
+
+
+def extract_frames(video_file: str, timestamps_df: pd.DataFrame, output_dir: str) -> None:
 
     # Open the video file
     cap = cv2.VideoCapture(video_file)
@@ -60,7 +97,7 @@ def extract_frames(video_file: str, timestamps_df: pd.DataFrame, output_dir: str
     cap.release()
 
 
-def extract_frames_ffmpeg(video_file: str, timestamps_df: pd.DataFrame, output_dir: str):
+def extract_frames_ffmpeg(video_file: str, timestamps_df: pd.DataFrame, output_dir: str) -> None:
     video_w, video_h, _ = video_info(video_file)
 
     ffmpeg_read_process = (
@@ -98,7 +135,7 @@ def extract_frames_ffmpeg(video_file: str, timestamps_df: pd.DataFrame, output_d
         ffmpeg_read_process = None
 
 
-def rebuild_video(dir: Path, frames: pd.DataFrame, outfile: Path) -> None:
+def rebuild_video(dir: Path, frames: pd.DataFrame, fps: float, outfile: Path) -> None:
 
     # We don't know the target video size, yet.
     frame_width = None
@@ -131,6 +168,7 @@ def rebuild_video(dir: Path, frames: pd.DataFrame, outfile: Path) -> None:
                 ffmpeg_video_out_process = (
                                     ffmpeg
                                         .input('pipe:', format='rawvideo', pix_fmt='rgb24', s='{}x{}'.format(frame_width, frame_height))
+                                        .filter('fps', fps=fps)
                                         # -vf "drawtext=fontfile=Arial.ttf: fontsize=48: text=%{n}: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: box=1: boxcolor=0x00000099"
                                         .drawtext(text="%{n}", escape_text=False,
                                                   #x=50, y=50,
