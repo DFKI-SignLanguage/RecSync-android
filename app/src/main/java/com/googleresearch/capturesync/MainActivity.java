@@ -91,7 +91,19 @@ import java.util.Map;
 import java.util.concurrent.FutureTask;
 import java.util.stream.Collectors;
 
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
+import org.apache.hc.client5.http.entity.mime.FileBody;
+import org.apache.hc.client5.http.entity.mime.HttpMultipartMode;
+import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.HttpResponse;
+import org.apache.hc.core5.http.NameValuePair;
+import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import io.javalin.Javalin;
@@ -423,6 +435,19 @@ public class MainActivity extends Activity {
 
                 break;
 
+            case "PREFIX_LIST" :
+                Log.i(TAG,"handling the message in PREFIX_LIST" );
+                sendPrefixList();
+                ((SoftwareSyncLeader) softwareSyncController.softwareSync)
+                        .broadcastRpc(
+                                SoftwareSyncController.METHOD_PREFIX_LIST,
+                                "0");
+
+                break;
+            case "PING" :
+                Log.i(TAG,"handling the message in PING" );
+                wsMessageContext.send("PONG");
+                break;
         }
     }
 
@@ -682,6 +707,40 @@ public class MainActivity extends Activity {
         }
     }
 
+    public void sendPrefixList(){
+        HttpResponse httpResponse;
+        int statusCode;
+        JSONArray fileNamesArray=new JSONArray();
+        File sdcard = Environment.getExternalStorageDirectory();
+        String videoFilePath = sdcard.getAbsolutePath()+ "/RecSync/VID/";
+        String clientID = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
+        File path = new File(videoFilePath);
+        File fileList[] = path.listFiles();
+        List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
+        String filename;
+        for(int i=0; i< fileList.length; i++){
+            filename = fileList[i].getName();
+            try{
+                fileNamesArray.put(filename);
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+
+        }
+        nameValuePairs.add(new BasicNameValuePair("file_list", fileNamesArray.toString()));
+        nameValuePairs.add(new BasicNameValuePair("client_id",clientID ));
+        try (final CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            String endpoint = "http://192.168.5.1:5000/namelist";
+            final HttpPost httpPost = new HttpPost(endpoint);
+            httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+            httpResponse = httpClient.execute(httpPost);
+            statusCode = httpResponse.getCode();
+            System.out.println("Response Status:" + statusCode);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
     private PhaseConfig loadPhaseConfigFile() throws JSONException {
         // Load phase config file and pass to phase aligner.
 
