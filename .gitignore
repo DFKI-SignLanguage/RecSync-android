@@ -42,3 +42,7 @@ opencamera-extended-firebase-adminsdk-yv5yz-e33a8ce5c1.json
 # OS
 .DS_Store
 
+
+#
+# Python stuff
+*.pyc
