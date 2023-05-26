@@ -64,6 +64,7 @@ public class SoftwareSyncController implements Closeable {
     public static final int METHOD_STOP_RECORDING = 200_004;
     public static final int METHOD_UPLOAD_RECORDED_FILES = 200_005;
     public static final int METHOD_EMPTY_DEVICE = 200_006;
+    public static final int METHOD_PREFIX_LIST = 200_007;
 
     private long upcomingTriggerTimeNs;
 
@@ -217,6 +218,14 @@ public class SoftwareSyncController implements Closeable {
                         Log.v(TAG, "Uploading Recorded Files");
                         context.runOnUiThread(
                                 () -> context.sendFilesToServer(payload)
+                        );
+                    });
+            clientRpcs.put(
+                    METHOD_PREFIX_LIST,
+                    payload -> {
+                        Log.v(TAG, "Sending Files List");
+                        context.runOnUiThread(
+                                () -> context.sendPrefixList()
                         );
                     });
 

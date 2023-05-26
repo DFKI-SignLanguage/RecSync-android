@@ -12,7 +12,8 @@ import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMessageBox
 import websocket
-
+import rel
+import threading
 
 class RemoteController(object):
 
@@ -79,6 +80,15 @@ class RemoteController(object):
     def clearStatusBtn(self):
         self.status_label.setPlainText("")
 
+    def prefixList(self):
+        try:
+            self.ws.send("PREFIX_LIST")
+        except Exception as e:
+            self.show_popup()
+            with open('last_prefix.txt','w+') as file:
+                file.writelines(self.download_prefix_text.toPlainText())
+            sys.exit()
+
     def downloadBtn(self):
         endpoint = self.api_input.toPlainText()
         download_prefix = self.download_prefix_text.toPlainText()
@@ -93,12 +103,26 @@ class RemoteController(object):
            return False
         return True
 
+    def asyncTask(self, f_stop):
+        self.ws.send("PING")
+        if not f_stop.is_set():
+                # call f() again in 60 seconds
+                threading.Timer(5, self.asyncTask, [f_stop]).start()
+
     def setupUi(self, MainWindow):
         # Setup the WEB SOCKET
+        #self.ws = websocket.WebSocketApp("ws://192.168.5.2:7867/remotecon")
         self.ws = websocket.WebSocket()
-
-        self.ws.connect("ws://192.168.5.2:7867/remotecon", ping_interval=1)
-
+        self.ws.connect("ws://192.168.5.2:7867/remotecon")
+        f_stop = threading.Event()
+        self.asyncTask(f_stop)
+#         self.ws = websocket.WebSocketApp("ws://192.168.5.2:7867/remotecon")
+#
+#         self.ws.run_forever(ping_interval=1)
+#         self.ws.run_forever(dispatcher=rel, reconnect=5)
+#         rel.signal(2, rel.abort)
+#         rel.dispatch()
+#         await ws.send('2')
         # Setup the GUI
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(800, 800)
@@ -139,8 +163,15 @@ class RemoteController(object):
                 self.download_prefix_text.setText(data[0])
         except:
             pass
+
+        self.prefix_list_btn = QtWidgets.QPushButton(self.centralwidget)
+        self.prefix_list_btn.setGeometry(QtCore.QRect(120, 380, 241, 61))
+        self.prefix_list_btn.setFont(font)
+        self.prefix_list_btn.setObjectName("prefix_list_button")
+        self.prefix_list_btn.clicked.connect(self.prefixList)
+
         self.download_btn = QtWidgets.QPushButton(self.centralwidget)
-        self.download_btn.setGeometry(QtCore.QRect(280, 380, 161, 61))
+        self.download_btn.setGeometry(QtCore.QRect(380, 380, 241, 61))
         self.download_btn.setFont(font)
         self.download_btn.setObjectName("pushButton_4")
         self.download_btn.clicked.connect(self.downloadBtn)
@@ -186,6 +217,7 @@ class RemoteController(object):
         self.api_input.setPlaceholderText(_translate("MainWindow", "Please enter the api endpoint where you want the files to be uploaded."))
         self.download_prefix_text.setPlaceholderText(_translate("MainWindow", " Enter Session Prefix"))
         self.download_btn.setText(_translate("MainWindow", "Download"))
+        self.prefix_list_btn.setText(_translate("MainWindow", "Prefix List"))
         self.status_label.setPlaceholderText(_translate("MainWindow", "No status "))
 
 
