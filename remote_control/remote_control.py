@@ -107,7 +107,7 @@ class RemoteController(object):
         self.label = QtWidgets.QLabel(self.centralwidget)
         self.label.setGeometry(QtCore.QRect(290, 10, 161, 61))
         font = QtGui.QFont()
-        font.setFamily("Source Code Pro")
+        #font.setFamily("Source Code Pro")
         font.setPointSize(19)
         self.label.setFont(font)
         self.label.setObjectName("label")
@@ -180,9 +180,9 @@ class RemoteController(object):
         self.stop_btn.setText(_translate("MainWindow", "Stop"))
         self.status_btn.setText(_translate("MainWindow", "Status"))
         self.status_clear_btn.setText(_translate("MainWindow", "X"))
-        self.status_clear_btn.setStyleSheet('QPushButton {;color: red;}')
+        self.status_clear_btn.setStyleSheet('QPushButton {;color: #cc2222;}')
         self.delete_btn.setText(_translate("MainWindow", "Empty Device"))
-        self.delete_btn.setStyleSheet('QPushButton {;background-color: red;}')
+        self.delete_btn.setStyleSheet('QPushButton {;background-color: #cc2222;}')
         self.api_input.setPlaceholderText(_translate("MainWindow", "Please enter the api endpoint where you want the files to be uploaded."))
         self.download_prefix_text.setPlaceholderText(_translate("MainWindow", " Enter Session Prefix"))
         self.download_btn.setText(_translate("MainWindow", "Download"))
@@ -197,4 +197,5 @@ if __name__ == "__main__":
     rc.setupUi(MainWindow)
 
     MainWindow.show()
+
     sys.exit(app.exec_())
