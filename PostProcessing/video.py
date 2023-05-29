@@ -135,15 +135,35 @@ def extract_frames_ffmpeg(video_file: str, timestamps_df: pd.DataFrame, output_d
         ffmpeg_read_process = None
 
 
-def rebuild_video(dir: Path, frames: pd.DataFrame, fps: float, outfile: Path) -> None:
+def rebuild_video(dir: Path, frames: pd.DataFrame, video_info: VideoInfo, outfile: Path) -> None:
 
     # We don't know the target video size, yet.
-    frame_width = None
-    frame_height = None
+    frame_width = video_info.width
+    frame_height = video_info.height
+    fps = video_info.fps
 
-    # It will be instantiated later, after we know the size of the first image
-    ffmpeg_video_out_process = None
+    font_width = int(frame_height * 0.04)
 
+    # Initialize the ffmpeg encoder
+    ffmpeg_video_out_process = (
+        ffmpeg
+            .input('pipe:', format='rawvideo', pix_fmt='rgb24', s='{}x{}'.format(frame_width, frame_height))
+            .filter('fps', fps=fps)
+            # -vf "drawtext=fontfile=Arial.ttf: fontsize=48: text=%{n}: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: box=1: boxcolor=0x00000099"
+            .drawtext(text="%{n}", escape_text=False,
+                      # x=50, y=50,
+                      x="(w-tw)/2", y="h-(2*lh)",
+                      fontfile="Arial.ttf", fontsize=font_width, fontcolor="white",
+                      box=1, boxborderw=2, boxcolor="Black@0.6")
+
+            .output(str(outfile), pix_fmt='yuv420p')
+
+            .overwrite_output()
+            .run_async(pipe_stdin=True)
+    )
+
+    #
+    # Cycle through all the frames.
     for idx, row in frames.iterrows():
         ts = row["timestamp"]
         gen = row["generated"]
@@ -159,28 +179,11 @@ def rebuild_video(dir: Path, frames: pd.DataFrame, fps: float, outfile: Path) ->
             img_bgr = cv2.imread(str(frame_path))
             img = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
 
-            # If the frame size was not determined yet, take it from the next picture and initialize the ffmpeg encoder
-            if frame_width is None:
-                assert frame_width is None and frame_height is None and ffmpeg_video_out_process is None
+            img_height, img_width, _ = img.shape
 
-                frame_height, frame_width, _ = img.shape
-                font_width = int(frame_height * 0.04)
-                ffmpeg_video_out_process = (
-                                    ffmpeg
-                                        .input('pipe:', format='rawvideo', pix_fmt='rgb24', s='{}x{}'.format(frame_width, frame_height))
-                                        .filter('fps', fps=fps)
-                                        # -vf "drawtext=fontfile=Arial.ttf: fontsize=48: text=%{n}: x=(w-tw)/2: y=h-(2*lh): fontcolor=white: box=1: boxcolor=0x00000099"
-                                        .drawtext(text="%{n}", escape_text=False,
-                                                  #x=50, y=50,
-                                                  x="(w-tw)/2", y="h-(2*lh)",
-                                                  fontfile="Arial.ttf", fontsize=font_width, fontcolor="white",
-                                                  box=1, boxborderw=2, boxcolor="Black@0.6")
-
-                                        .output(str(outfile), pix_fmt='yuv420p')
-
-                                    .overwrite_output()
-                                    .run_async(pipe_stdin=True)
-                                )
+            if img_height != frame_height or img_width != frame_width:
+                raise Exception(f"The dimension of the read image ({img_width}x{img_height})"
+                                f" does not match the dimension of the generated video {frame_width}x{frame_height}.")
 
             assert frame_width is not None and frame_height is not None and ffmpeg_video_out_process is not None
 
@@ -190,7 +193,7 @@ def rebuild_video(dir: Path, frames: pd.DataFrame, fps: float, outfile: Path) ->
         elif gen == "Generated":
 
             # The first frame can NOT be a generated one
-            assert frame_width is not None and frame_height is not None
+            assert frame_width is not None and frame_height is not None and ffmpeg_video_out_process is not None
 
             # Create an artificial black frame
             print(f"Injecting Black frame at idx {idx}")
