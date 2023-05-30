@@ -130,9 +130,8 @@ def main(input_dir: Path, output_dir: Path, threshold_ns: int):
 
             # Reconstruct videos
             vinfo = extract_video_info(video_path=video_file)
-            input_fps = vinfo.fps
             video_out_filepath = output_dir / (cID + ".mp4")
-            rebuild_video(dir=Path(tmp_dir), frames=trimmed_df, fps=input_fps, outfile=video_out_filepath)
+            rebuild_video(dir=Path(tmp_dir), frames=trimmed_df, video_info=vinfo, outfile=video_out_filepath)
             # And save also the CSV
             csv_out_filepath = video_out_filepath.with_suffix(".csv")
             trimmed_df.to_csv(path_or_buf=csv_out_filepath, header=True, index=False)
