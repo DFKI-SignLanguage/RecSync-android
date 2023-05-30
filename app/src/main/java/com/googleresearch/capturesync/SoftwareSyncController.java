@@ -221,6 +221,15 @@ public class SoftwareSyncController implements Closeable {
                         );
                     });
             clientRpcs.put(
+                    METHOD_EMPTY_DEVICE,
+                    payload -> {
+                        Log.v(TAG, "Deleting All Recordings and Related Files");
+                        context.runOnUiThread(
+                                () -> context.deleteAllFiles()
+                        );
+                    });
+
+            clientRpcs.put(
                     METHOD_PREFIX_LIST,
                     payload -> {
                         Log.v(TAG, "Sending Files List");
@@ -229,14 +238,7 @@ public class SoftwareSyncController implements Closeable {
                         );
                     });
 
-            clientRpcs.put(
-                    METHOD_EMPTY_DEVICE,
-                    payload -> {
-                        Log.v(TAG, "Deleting All Recordings and Related Files");
-                        context.runOnUiThread(
-                                () -> context.deleteAllFiles()
-                        );
-                    });
+
 
             clientRpcs.put(
                     SyncConstants.METHOD_MSG_OFFSET_UPDATED,

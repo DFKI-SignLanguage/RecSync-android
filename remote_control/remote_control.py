@@ -137,27 +137,20 @@ class RemoteController(object):
 
     def setupUi(self, MainWindow):
         # Setup the WEB SOCKET
-        #self.ws = websocket.WebSocketApp("ws://192.168.5.2:7867/remotecon")
-#         self.ws = websocket.WebSocket()
-#         self.ws.connect(CONNECTION_URL)
-#         f_stop = threading.Event()
-#         self.asyncTask(f_stop)
+        self.ws = websocket.WebSocket()
+        self.ws.connect(CONNECTION_URL)
+
         # Setup the GUI
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(800, 800)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
-        self.label = QtWidgets.QLabel(self.centralwidget)
-        self.label.setGeometry(QtCore.QRect(290, 10, 161, 61))
         font = QtGui.QFont()
-        #font.setFamily("Source Code Pro")
         font.setPointSize(19)
-        self.label.setFont(font)
-        self.label.setObjectName("label")
 
 
         self.record_icon_btn = QtWidgets.QPushButton(self.centralwidget)
-        self.record_icon_btn.setGeometry(QtCore.QRect(300, 120, 120, 61))
+        self.record_icon_btn.setGeometry(QtCore.QRect(350, 140, 40, 30))
         self.record_icon_btn.setFont(font)
         self.record_icon_btn.setObjectName("record_icon_btn")
 
@@ -239,7 +232,6 @@ class RemoteController(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Remote Control App"))
-        self.label.setText(_translate("MainWindow", "RC APP"))
         self.record_icon_btn.setText(_translate("MainWindow", ""))
         self.start_btn.setText(_translate("MainWindow", "Start"))
         self.stop_btn.setText(_translate("MainWindow", "Stop"))
