@@ -1156,9 +1156,9 @@ public class MainActivity extends Activity {
         lastVideoPath = getOutputMediaFilePath(prefixText);
         recorder.setOutputFile(lastVideoPath);
 
-        CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_1080P);
+        CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_2160P);
         recorder.setVideoSize(profile.videoFrameWidth, profile.videoFrameHeight);
-        recorder.setVideoEncodingBitRate(8000000);
+        recorder.setVideoEncodingBitRate(60*1000*1000);
         recorder.setVideoFrameRate(30);
         Log.d(TAG, profile.videoBitRate + " Bitrate");
 
@@ -1187,22 +1187,17 @@ public class MainActivity extends Activity {
         String csvFilePath = sdcard.getAbsolutePath()+ "/RecSync/";
         File path = new File(videoFilePath);
         File fileList[] = path.listFiles();
-        Log.i(TAG,"Video File Path:"+videoFilePath );
-        Log.i(TAG,"No of files to delete: "+fileList.length );
         String filename;
         for(int i=0; i< fileList.length; i++){
             filename = fileList[i].getName();
             try{
-                Log.i(TAG,"inside  deleteall" );
                 File vFile = new File(videoFilePath + filename);
                 vFile.delete();
-                Log.i(TAG,"csv_file_path : " + csvFilePath + filename.split("\\.")[0] + ".csv" );
                 File csvFile = new File(csvFilePath + filename.split("\\.")[0] + ".csv");
                 csvFile.delete();
             }catch (Exception e){
                 e.printStackTrace();
             }
-
         }
     }
 
