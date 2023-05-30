@@ -35,12 +35,13 @@ class RemoteController(object):
         session_prefix = self.download_prefix_text.toPlainText()
         self.save_last_prefix_text()
         if self.isPrefix(session_prefix) and self.start_btn.isEnabled():
+            self.label.setText('Recording Started')
+            self.label.adjustSize()
+            self.start_btn.setEnabled(False)
+            self.stop_btn.setEnabled(True)
+            self.record_icon_btn.setStyleSheet('QPushButton {;background-color: #CD1818;}')
             try:
                 self.ws.send("START_REC@@"+session_prefix)
-                self.label.setText('Recording Started')
-                self.label.adjustSize()
-                self.start_btn.setEnabled(False)
-                self.stop_btn.setEnabled(True)
             except Exception as e:
                 self.show_popup()
                 self.save_last_prefix_text()
@@ -52,6 +53,7 @@ class RemoteController(object):
             self.label.setText('Recording Stopped')
             self.stop_btn.setEnabled(False)
             self.start_btn.setEnabled(True)
+            self.record_icon_btn.setStyleSheet('QPushButton {;background-color: #7E1717;}')
             try:
                 self.ws.send("STOP_REC")
             except Exception as e:
@@ -136,8 +138,8 @@ class RemoteController(object):
     def setupUi(self, MainWindow):
         # Setup the WEB SOCKET
         #self.ws = websocket.WebSocketApp("ws://192.168.5.2:7867/remotecon")
-        self.ws = websocket.WebSocket()
-        self.ws.connect(CONNECTION_URL)
+#         self.ws = websocket.WebSocket()
+#         self.ws.connect(CONNECTION_URL)
 #         f_stop = threading.Event()
 #         self.asyncTask(f_stop)
         # Setup the GUI
@@ -152,6 +154,13 @@ class RemoteController(object):
         font.setPointSize(19)
         self.label.setFont(font)
         self.label.setObjectName("label")
+
+
+        self.record_icon_btn = QtWidgets.QPushButton(self.centralwidget)
+        self.record_icon_btn.setGeometry(QtCore.QRect(300, 120, 120, 61))
+        self.record_icon_btn.setFont(font)
+        self.record_icon_btn.setObjectName("record_icon_btn")
+
         self.start_btn = QtWidgets.QPushButton(self.centralwidget)
         self.start_btn.setGeometry(QtCore.QRect(130, 120, 161, 61))
         self.start_btn.setFont(font)
@@ -231,6 +240,7 @@ class RemoteController(object):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Remote Control App"))
         self.label.setText(_translate("MainWindow", "RC APP"))
+        self.record_icon_btn.setText(_translate("MainWindow", ""))
         self.start_btn.setText(_translate("MainWindow", "Start"))
         self.stop_btn.setText(_translate("MainWindow", "Stop"))
         self.status_btn.setText(_translate("MainWindow", "Status"))
@@ -243,7 +253,7 @@ class RemoteController(object):
         self.download_btn.setText(_translate("MainWindow", "Download"))
         self.prefix_list_btn.setText(_translate("MainWindow", "Prefix List"))
         self.phase_align_btn.setText(_translate("MainWindow", "Phase Align"))
-        self.status_label.setPlaceholderText(_translate("MainWindow", "No status "))
+        self.record_icon_btn.setStyleSheet('QPushButton {;background-color: #7E1717;}')
 
 
 if __name__ == "__main__":
