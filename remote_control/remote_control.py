@@ -47,17 +47,10 @@ class RemoteController(object):
         with open('last_prefix.txt', 'w+') as file:
             file.writelines(self.download_prefix_text.toPlainText())
 
-    def show_popup(self):
+    def show_error_popup(self, text: str = ""):
         msg = QMessageBox()
         msg.setWindowTitle("Connection Error")
-        msg.setText("Seems like your websocket connection is closed")
-        msg.setIcon(QMessageBox.Critical)
-        msg.exec_()
-
-    def show_popup_msg(self, msg: str):
-        msg = QMessageBox()
-        msg.setWindowTitle("Connection Error")
-        msg.setText(msg)
+        msg.setText(text)
         msg.setIcon(QMessageBox.Critical)
         msg.exec_()
 
@@ -71,7 +64,7 @@ class RemoteController(object):
             try:
                 self.ws.send("START_REC@@"+session_prefix)
             except Exception as e:
-                self.show_popup()
+                self.show_error_popup(f"Can't start recording: {e}")
                 self.save_last_prefix_text()
                 sys.exit()
 
@@ -84,7 +77,7 @@ class RemoteController(object):
             try:
                 self.ws.send("STOP_REC")
             except Exception as e:
-                self.show_popup()
+                self.show_error_popup(f"Can't stop recording: {e}")
                 self.save_last_prefix_text()
                 sys.exit()
 
@@ -95,7 +88,7 @@ class RemoteController(object):
             message = self.ws.recv()
             self.status_label.setPlainText(message)
         except Exception as e:
-            self.show_popup()
+            self.show_error_popup(f"Can't get clients status: {e}")
             self.save_last_prefix_text()
             sys.exit()
 
@@ -111,7 +104,7 @@ class RemoteController(object):
             try:
                 self.ws.send("DELETE_ALL")
             except Exception as e:
-                self.show_popup()
+                self.show_error_popup(f"Can't delete clients' files: {e}")
                 self.save_last_prefix_text()
                 sys.exit()
 
@@ -123,7 +116,7 @@ class RemoteController(object):
         try:
             self.ws.send("PREFIX_LIST")
         except Exception as e:
-            self.show_popup()
+            self.show_error_popup(f"Can't ask for clients' predfixes: {e}")
             self.save_last_prefix_text()
             sys.exit()
 
@@ -136,7 +129,7 @@ class RemoteController(object):
 
     def isPrefix(self, prefix_text):
         if prefix_text is None or len(prefix_text) == 0:
-            self.show_popup_msg('Prefix Text Missing')
+            self.show_error_popup('Prefix Text Missing')
             return False
         return True
 
@@ -145,7 +138,7 @@ class RemoteController(object):
         try:
             self.ws.send("PHASE_ALIGN")
         except Exception as e:
-            self.show_popup()
+            self.show_error_popup(f"Can't ask for phase alignment: {e}")
             self.save_last_prefix_text()
             sys.exit()
 
