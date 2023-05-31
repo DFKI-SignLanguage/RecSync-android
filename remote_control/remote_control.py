@@ -116,7 +116,7 @@ class RemoteController(object):
         try:
             self.ws.send("PREFIX_LIST")
         except Exception as e:
-            self.show_error_popup(f"Can't ask for clients' predfixes: {e}")
+            self.show_error_popup(f"Can't ask for clients' prefixes: {e}")
             self.save_last_prefix_text()
             sys.exit()
 
@@ -125,7 +125,12 @@ class RemoteController(object):
         download_prefix = self.download_prefix_text.toPlainText()
         self.save_last_prefix_text()
         if self.isPrefix(download_prefix):
-            self.ws.send("UPLOAD@@"+endpoint+","+download_prefix)
+            try:
+                self.ws.send("UPLOAD@@"+endpoint+","+download_prefix)
+            except Exception as e:
+                self.show_error_popup(f"Can't ask for clients' content: {e}")
+                self.save_last_prefix_text()
+                sys.exit()
 
     def isPrefix(self, prefix_text):
         if prefix_text is None or len(prefix_text) == 0:
