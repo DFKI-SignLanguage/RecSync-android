@@ -12,6 +12,8 @@ import argparse
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout
+
 import websocket
 import threading
 
@@ -45,7 +47,7 @@ class RemoteController(object):
 
     def save_last_prefix_text(self):
         with open('last_prefix.txt', 'w+') as file:
-            file.writelines(self.download_prefix_text.toPlainText())
+            file.writelines(self.download_prefix_text.text())
 
     def show_error_popup(self, text: str = ""):
         msg = QMessageBox()
@@ -55,7 +57,7 @@ class RemoteController(object):
         msg.exec_()
 
     def startBtn(self):
-        session_prefix = self.download_prefix_text.toPlainText()
+        session_prefix = self.download_prefix_text.text()
         self.save_last_prefix_text()
         if self.isPrefix(session_prefix) and self.start_btn.isEnabled():
             self.start_btn.setEnabled(False)
@@ -121,8 +123,8 @@ class RemoteController(object):
             sys.exit()
 
     def downloadBtn(self):
-        endpoint = self.api_input.toPlainText()
-        download_prefix = self.download_prefix_text.toPlainText()
+        endpoint = self.api_input.text()
+        download_prefix = self.download_prefix_text.text()
         self.save_last_prefix_text()
         if self.isPrefix(download_prefix):
             try:
@@ -158,87 +160,134 @@ class RemoteController(object):
 
         # Setup the GUI
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(800, 800)
+        # MainWindow.resize(800, 800)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         font = QtGui.QFont()
-        font.setPointSize(19)
+        font.setPointSize(20)
 
+        #
+        # SESSION
+        sess_label = QtWidgets.QLabel("Session ID:")
+        sess_label.setFont(font)
 
-        self.record_icon_btn = QtWidgets.QPushButton(self.centralwidget)
-        self.record_icon_btn.setGeometry(QtCore.QRect(350, 140, 40, 30))
-        self.record_icon_btn.setFont(font)
-        self.record_icon_btn.setObjectName("record_icon_btn")
-
-        self.start_btn = QtWidgets.QPushButton(self.centralwidget)
-        self.start_btn.setGeometry(QtCore.QRect(130, 120, 161, 61))
-        self.start_btn.setFont(font)
-        self.start_btn.setObjectName("pushButton")
-        self.start_btn.clicked.connect(self.startBtn)
-
-        self.stop_btn = QtWidgets.QPushButton(self.centralwidget)
-        self.stop_btn.setGeometry(QtCore.QRect(430, 120, 161, 61))
-        self.stop_btn.setFont(font)
-        self.stop_btn.setObjectName("pushButton_2")
-        self.stop_btn.clicked.connect(self.stopBtn)
-        self.stop_btn.setEnabled(False)
-
-        self.status_btn = QtWidgets.QPushButton(self.centralwidget)
-        self.status_btn.setGeometry(QtCore.QRect(280, 200,  161, 61))
-        self.status_btn.setFont(font)
-        self.status_btn.setObjectName("pushButton_3")
-        self.status_btn.clicked.connect(self.statusBtn)
-
-        self.api_input = QtWidgets.QTextEdit(self.centralwidget)
-        self.api_input.setGeometry(QtCore.QRect(143, 450, 451, 31))
-        self.api_input.setObjectName("textEdit")
-        self.download_prefix_text = QtWidgets.QTextEdit(self.centralwidget)
-        self.download_prefix_text.setGeometry(QtCore.QRect(180, 80, 380, 31))
+        self.download_prefix_text = QtWidgets.QLineEdit()
+        self.download_prefix_text.setFont(font)
         self.download_prefix_text.setObjectName("prefix_text")
         try:
-            with open('last_prefix.txt','r+') as file:
+            with open('last_prefix.txt', 'r+') as file:
                 data = file.readlines()
             if len(data) > 0:
                 self.download_prefix_text.setText(data[0])
         except:
             pass
 
-        self.prefix_list_btn = QtWidgets.QPushButton(self.centralwidget)
-        self.prefix_list_btn.setGeometry(QtCore.QRect(120, 380, 241, 61))
+        session_id_layout = QHBoxLayout()
+        session_id_layout.addStretch(1)
+        session_id_layout.addWidget(sess_label)
+        session_id_layout.addWidget(self.download_prefix_text, 2)
+        session_id_layout.addStretch(1)
+
+        #
+        # REC/STOP
+        self.phase_align_btn = QtWidgets.QPushButton()
+        self.phase_align_btn.setFont(font)
+        self.phase_align_btn.setObjectName("pushButton_phase")
+        self.phase_align_btn.clicked.connect(self.phaseAlign)
+
+        self.start_btn = QtWidgets.QPushButton()
+        self.start_btn.setFont(font)
+        self.start_btn.setObjectName("pushButton")
+        self.start_btn.clicked.connect(self.startBtn)
+
+        # TODO -- convert to label
+        self.record_icon_btn = QtWidgets.QPushButton()
+        self.record_icon_btn.setFont(font)
+        self.record_icon_btn.setObjectName("record_icon_btn")
+
+        self.stop_btn = QtWidgets.QPushButton()
+        self.stop_btn.setFont(font)
+        self.stop_btn.setObjectName("pushButton_2")
+        self.stop_btn.clicked.connect(self.stopBtn)
+        self.stop_btn.setEnabled(False)
+
+        record_layout = QHBoxLayout()
+        record_layout.addStretch(1)
+        record_layout.addWidget(self.phase_align_btn, 1)
+        record_layout.addWidget(self.start_btn, 1)
+        record_layout.addWidget(self.record_icon_btn)
+        record_layout.addStretch(1)
+        record_layout.addWidget(self.stop_btn, 1)
+        record_layout.addStretch(1)
+
+        #
+        # CLIENTS STATUS
+        self.status_clear_btn = QtWidgets.QPushButton()
+        self.status_clear_btn.setFont(font)
+        self.status_clear_btn.setObjectName("pushButton_5")
+        self.status_clear_btn.clicked.connect(self.clearStatusBtn)
+
+        self.status_btn = QtWidgets.QPushButton()
+        self.status_btn.setFont(font)
+        self.status_btn.setObjectName("pushButton_3")
+        self.status_btn.clicked.connect(self.statusBtn)
+
+        self.status_label = QtWidgets.QPlainTextEdit()
+        self.status_label.setObjectName("plainTextEdit")
+        self.status_label.setPlainText("Clients list goes here...")
+
+        status_layout = QtWidgets.QHBoxLayout()
+        status_layout.addStretch(1)
+        status_layout.addWidget(self.status_clear_btn)
+        status_layout.addWidget(self.status_btn)
+        status_layout.addStretch(1)
+
+        #
+        # CLIENTS CONTROL
+
+        self.prefix_list_btn = QtWidgets.QPushButton()
         self.prefix_list_btn.setFont(font)
         self.prefix_list_btn.setObjectName("prefix_list_button")
         self.prefix_list_btn.clicked.connect(self.prefixList)
         # TODO -- tmp until it is fixed
         self.prefix_list_btn.setEnabled(False)
 
-        self.download_btn = QtWidgets.QPushButton(self.centralwidget)
-        self.download_btn.setGeometry(QtCore.QRect(380, 380, 241, 61))
+        self.download_btn = QtWidgets.QPushButton()
         self.download_btn.setFont(font)
         self.download_btn.setObjectName("pushButton_4")
         self.download_btn.clicked.connect(self.downloadBtn)
 
-        self.delete_btn = QtWidgets.QPushButton(self.centralwidget)
-        self.delete_btn.setGeometry(QtCore.QRect(450, 520, 161, 50))
+        self.api_input = QtWidgets.QLineEdit()
+        self.api_input.setObjectName("textEdit")
+
+        self.delete_btn = QtWidgets.QPushButton()
         self.delete_btn.setFont(font)
         self.delete_btn.setObjectName("pushButton_6")
         self.delete_btn.clicked.connect(self.delete_all_btn)
 
-        self.phase_align_btn = QtWidgets.QPushButton(self.centralwidget)
-        self.phase_align_btn.setGeometry(QtCore.QRect(120,520, 161, 50))
-        self.phase_align_btn.setFont(font)
-        self.phase_align_btn.setObjectName("pushButton_phase")
-        self.phase_align_btn.clicked.connect(self.phaseAlign)
+        clients_control_layout = QtWidgets.QGridLayout()
+        clients_control_layout.addWidget(QtWidgets.QLabel(""), 0, 0)
+        clients_control_layout.addWidget(self.prefix_list_btn, 0, 1)
+        clients_control_layout.addWidget(self.download_btn, 0, 2)
+        clients_control_layout.addWidget(QtWidgets.QLabel(""), 0, 3)
+        clients_control_layout.addWidget(self.api_input, 1, 1, 1, 2)
+        clients_control_layout.addWidget(QtWidgets.QLabel(""), 2, 0)
+        clients_control_layout.addWidget(self.delete_btn, 3, 2)
 
-        self.status_label = QtWidgets.QPlainTextEdit(self.centralwidget)
-        self.status_label.setGeometry(QtCore.QRect(173, 280, 381, 91))
-        self.status_label.setObjectName("plainTextEdit")
+        #
+        # Compose all layouts
+        main_layout = QVBoxLayout()
+        main_layout.addLayout(session_id_layout)
+        main_layout.addLayout(record_layout)
+        main_layout.addLayout(status_layout)
+        main_layout.addWidget(self.status_label)
+        main_layout.addLayout(clients_control_layout)
+        #main_layout.addStretch(1)
 
-        self.status_clear_btn = QtWidgets.QPushButton(self.centralwidget)
-        self.status_clear_btn.setGeometry(QtCore.QRect(560, 341, 31, 31))
-        self.status_clear_btn.setFont(font)
-        self.status_clear_btn.setObjectName("pushButton_5")
-        self.status_clear_btn.clicked.connect(self.clearStatusBtn)
+        self.centralwidget.setLayout(main_layout)
 
+        #
+        # SETUP MAIN WINDOW
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 21))
@@ -248,6 +297,8 @@ class RemoteController(object):
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
 
+        #
+        # Finalize
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
