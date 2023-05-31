@@ -16,16 +16,32 @@ import websocket
 import threading
 
 # The default remote URL to connect to
-CONNECTION_URL = "ws://192.168.5.3:7867/remotecon"
+CONNECTION_URL = "ws://192.168.5.2:7867/remotecon"
+
+# Three levels of red
+DIM_RED = "#5E1717"
+MID_RED = "#992217"
+BRIGHT_RED = "#cc2222"
 
 
 class RemoteController(object):
 
-    def __init__(self, MainWindow, websocket_url: str = CONNECTION_URL, connect: bool = True) -> None:
+    def __init__(self, MainWindow, websocket_url: str = CONNECTION_URL, connect_at_start: bool = True) -> None:
         self._websocket_url = websocket_url
-        self._connect = connect
 
         self.setupUi(MainWindow)
+
+        # Setup the WEB SOCKET
+        self.ws = websocket.WebSocket()
+
+        if connect_at_start:
+            print(f"Connecting to {self._websocket_url}...")
+            self.ws.connect(self._websocket_url)
+            # TODO -- setup the timer for the websocket ping
+            #f_stop = threading.Event()
+            #self.asyncTask(f_stop)
+        else:
+            print("Skipping connection")
 
     def save_last_prefix_text(self):
         with open('last_prefix.txt', 'w+') as file:
@@ -38,15 +54,20 @@ class RemoteController(object):
         msg.setIcon(QMessageBox.Critical)
         msg.exec_()
 
+    def show_popup_msg(self, msg: str):
+        msg = QMessageBox()
+        msg.setWindowTitle("Connection Error")
+        msg.setText(msg)
+        msg.setIcon(QMessageBox.Critical)
+        msg.exec_()
+
     def startBtn(self):
         session_prefix = self.download_prefix_text.toPlainText()
         self.save_last_prefix_text()
         if self.isPrefix(session_prefix) and self.start_btn.isEnabled():
-            self.label.setText('Recording Started')
-            self.label.adjustSize()
             self.start_btn.setEnabled(False)
             self.stop_btn.setEnabled(True)
-            self.record_icon_btn.setStyleSheet('QPushButton {;background-color: #CD1818;}')
+            self.record_icon_btn.setStyleSheet('QPushButton {;background-color: #EE1818;}')
             try:
                 self.ws.send("START_REC@@"+session_prefix)
             except Exception as e:
@@ -57,10 +78,9 @@ class RemoteController(object):
     def stopBtn(self):
         self.save_last_prefix_text()
         if self.stop_btn.isEnabled() and not self.start_btn.isEnabled():
-            self.label.setText('Recording Stopped')
             self.stop_btn.setEnabled(False)
             self.start_btn.setEnabled(True)
-            self.record_icon_btn.setStyleSheet('QPushButton {;background-color: #7E1717;}')
+            self.record_icon_btn.setStyleSheet('QPushButton {;background-color: ' + DIM_RED + ';}')
             try:
                 self.ws.send("STOP_REC")
             except Exception as e:
@@ -78,8 +98,6 @@ class RemoteController(object):
             self.show_popup()
             self.save_last_prefix_text()
             sys.exit()
-
-
 
     def delete_all_btn(self):
         msgBox = QMessageBox()
@@ -118,10 +136,8 @@ class RemoteController(object):
 
     def isPrefix(self, prefix_text):
         if prefix_text is None or len(prefix_text) == 0:
-           self.label.setText('Prefix Text Missing')
-           self.label.adjustSize()
-           self.label.setStyleSheet("background-color: red")
-           return False
+            self.show_popup_msg('Prefix Text Missing')
+            return False
         return True
 
     def phaseAlign(self):
@@ -141,15 +157,6 @@ class RemoteController(object):
 #                 threading.Timer(5, self.asyncTask, [f_stop]).start()
 
     def setupUi(self, MainWindow):
-        # Setup the WEB SOCKET
-        if self._connect:
-            print(f"Connecting to {self._websocket_url}...")
-            self.ws = websocket.WebSocket()
-            self.ws.connect(self._websocket_url)
-            #f_stop = threading.Event()
-            #self.asyncTask(f_stop)
-        else:
-            print("Skipping connection")
 
         # Setup the GUI
         MainWindow.setObjectName("MainWindow")
@@ -170,17 +177,20 @@ class RemoteController(object):
         self.start_btn.setFont(font)
         self.start_btn.setObjectName("pushButton")
         self.start_btn.clicked.connect(self.startBtn)
+
         self.stop_btn = QtWidgets.QPushButton(self.centralwidget)
         self.stop_btn.setGeometry(QtCore.QRect(430, 120, 161, 61))
         self.stop_btn.setFont(font)
         self.stop_btn.setObjectName("pushButton_2")
         self.stop_btn.clicked.connect(self.stopBtn)
         self.stop_btn.setEnabled(False)
+
         self.status_btn = QtWidgets.QPushButton(self.centralwidget)
         self.status_btn.setGeometry(QtCore.QRect(280, 200,  161, 61))
         self.status_btn.setFont(font)
         self.status_btn.setObjectName("pushButton_3")
         self.status_btn.clicked.connect(self.statusBtn)
+
         self.api_input = QtWidgets.QTextEdit(self.centralwidget)
         self.api_input.setGeometry(QtCore.QRect(143, 450, 451, 31))
         self.api_input.setObjectName("textEdit")
@@ -200,6 +210,8 @@ class RemoteController(object):
         self.prefix_list_btn.setFont(font)
         self.prefix_list_btn.setObjectName("prefix_list_button")
         self.prefix_list_btn.clicked.connect(self.prefixList)
+        # TODO -- tmp until it is fixed
+        self.prefix_list_btn.setEnabled(False)
 
         self.download_btn = QtWidgets.QPushButton(self.centralwidget)
         self.download_btn.setGeometry(QtCore.QRect(380, 380, 241, 61))
@@ -219,15 +231,16 @@ class RemoteController(object):
         self.phase_align_btn.setObjectName("pushButton_phase")
         self.phase_align_btn.clicked.connect(self.phaseAlign)
 
-
         self.status_label = QtWidgets.QPlainTextEdit(self.centralwidget)
         self.status_label.setGeometry(QtCore.QRect(173, 280, 381, 91))
         self.status_label.setObjectName("plainTextEdit")
+
         self.status_clear_btn = QtWidgets.QPushButton(self.centralwidget)
         self.status_clear_btn.setGeometry(QtCore.QRect(560, 341, 31, 31))
         self.status_clear_btn.setFont(font)
         self.status_clear_btn.setObjectName("pushButton_5")
         self.status_clear_btn.clicked.connect(self.clearStatusBtn)
+
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 21))
@@ -242,21 +255,30 @@ class RemoteController(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "Remote Control App"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "RecSyncNG - Remote Controller"))
+
         self.record_icon_btn.setText(_translate("MainWindow", ""))
-        self.start_btn.setText(_translate("MainWindow", "Start"))
+
+        self.start_btn.setText(_translate("MainWindow", "Record"))
+
         self.stop_btn.setText(_translate("MainWindow", "Stop"))
+
         self.status_btn.setText(_translate("MainWindow", "Status"))
+
         self.status_clear_btn.setText(_translate("MainWindow", "X"))
-        self.status_clear_btn.setStyleSheet('QPushButton {;color: #cc2222;}')
-        self.delete_btn.setText(_translate("MainWindow", "Empty Device"))
-        self.delete_btn.setStyleSheet('QPushButton {;background-color: #cc2222;}')
+        self.status_clear_btn.setStyleSheet('QPushButton {;color: ' + MID_RED + ';}')
+
+        self.delete_btn.setText(_translate("MainWindow", "Empty Devices"))
+        self.delete_btn.setStyleSheet('QPushButton {;background-color: ' + MID_RED + ';}')
+
         self.api_input.setPlaceholderText(_translate("MainWindow", "Please enter the api endpoint where you want the files to be uploaded."))
+
         self.download_prefix_text.setPlaceholderText(_translate("MainWindow", " Enter Session Prefix"))
         self.download_btn.setText(_translate("MainWindow", "Download"))
+
         self.prefix_list_btn.setText(_translate("MainWindow", "Prefix List"))
         self.phase_align_btn.setText(_translate("MainWindow", "Phase Align"))
-        self.record_icon_btn.setStyleSheet('QPushButton {;background-color: #7E1717;}')
+        self.record_icon_btn.setStyleSheet('QPushButton {;background-color: ' + DIM_RED + ';}')
 
 
 if __name__ == "__main__":
@@ -268,19 +290,20 @@ if __name__ == "__main__":
         "--dont-connect", action="store_true", help="If set, just show the GUI, without connecting to the master device."
     )
     parser.add_argument(
-        "--url", type=str, required=False, help=f"Override the default URL websocket address (default: {CONNECTION_URL})."
+        "--url", type=str, required=False, default=CONNECTION_URL,
+        help=f"Override the default URL websocket address (default: {CONNECTION_URL})."
     )
 
     args = parser.parse_args()
     dont_connect = args.dont_connect
-    app_url = args.url if args.url is not None else CONNECTION_URL
+    app_url = args.url
     print(f"don't connect={dont_connect}, app_url={app_url}")
 
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
 
     print("Instance...")
-    rc = RemoteController(MainWindow, websocket_url=app_url, connect=not dont_connect)
+    rc = RemoteController(MainWindow, websocket_url=app_url, connect_at_start=not dont_connect)
 
     print("Showing...")
     MainWindow.show()
