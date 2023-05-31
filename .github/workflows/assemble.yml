@@ -41,6 +41,21 @@ jobs:
         with:
           name: lint-results
           path: app/build/reports/lint-results-*.*
+          
+      - name: Upload Release
+        uses: actions/upload-artifact@v2
+        with:
+          name: release-apk
+          path: app/build/outputs/apk/*/*.apk
+      - name: Upload Debug
+        uses: actions/upload-artifact@v2
+        with:
+          name: debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+      
+      
+      
+
 
       - name: Cleanup Gradle Cache
         # Remove some files from the Gradle cache, so they aren't cached by GitHub Actions.
