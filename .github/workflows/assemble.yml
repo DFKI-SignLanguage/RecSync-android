@@ -1,6 +1,8 @@
 name: Assemble
 
-on: [push, workflow_dispatch]
+on: 
+  pull_request:
+    - closed
 
 jobs:
   assemble:
@@ -42,19 +44,31 @@ jobs:
           name: lint-results
           path: app/build/reports/lint-results-*.*
           
-      - name: Upload Release
-        uses: actions/upload-artifact@v2
-        with:
-          name: release-apk
-          path: app/build/outputs/apk/*/*.apk
+
       - name: Upload Debug
         uses: actions/upload-artifact@v2
         with:
           name: debug-apk
-          path: app/build/outputs/apk/debug/*.apk
-      
-      
-      
+          path: app/build/outputs/apk/debug/app-debug.apk
+          
+          
+          # Hier signing fixen
+          
+      #- name: Sign Android release
+       # uses: r0adkll/sign-android-release@v1
+        #with:
+         # releaseDirectory: app/build/outputs/apk/release
+          #signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          #alias: ${{ secrets.ALIAS }}
+          #keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+          #keyPassword: ${{ secrets.KEY_PASSWORD }}
+
+    #  - uses: actions/upload-artifact@v2
+     #   with:
+      #    name: Signed app
+       #   path: ${{steps.sign_app.outputs.signedReleaseFile}}
+          
+  
 
 
       - name: Cleanup Gradle Cache
