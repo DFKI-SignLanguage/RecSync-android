@@ -62,7 +62,7 @@ class RemoteController(object):
         if self.isPrefix(session_prefix) and self.start_btn.isEnabled():
             self.start_btn.setEnabled(False)
             self.stop_btn.setEnabled(True)
-            self.record_icon_btn.setStyleSheet('QPushButton {;background-color: #EE1818;}')
+            self.record_label.setStyleSheet('QLabel {;background-color: ' + BRIGHT_RED + ';}')
             try:
                 self.ws.send("START_REC@@"+session_prefix)
             except Exception as e:
@@ -75,7 +75,7 @@ class RemoteController(object):
         if self.stop_btn.isEnabled() and not self.start_btn.isEnabled():
             self.stop_btn.setEnabled(False)
             self.start_btn.setEnabled(True)
-            self.record_icon_btn.setStyleSheet('QPushButton {;background-color: ' + DIM_RED + ';}')
+            self.record_label.setStyleSheet('QLabel {;background-color: ' + DIM_RED + ';}')
             try:
                 self.ws.send("STOP_REC")
             except Exception as e:
@@ -200,10 +200,9 @@ class RemoteController(object):
         self.start_btn.setObjectName("pushButton")
         self.start_btn.clicked.connect(self.startBtn)
 
-        # TODO -- convert to label
-        self.record_icon_btn = QtWidgets.QPushButton()
-        self.record_icon_btn.setFont(font)
-        self.record_icon_btn.setObjectName("record_icon_btn")
+        self.record_label = QtWidgets.QLabel()
+        self.record_label.setFont(font)
+        self.record_label.setObjectName("record_label")
 
         self.stop_btn = QtWidgets.QPushButton()
         self.stop_btn.setFont(font)
@@ -215,7 +214,7 @@ class RemoteController(object):
         record_layout.addStretch(1)
         record_layout.addWidget(self.phase_align_btn, 1)
         record_layout.addWidget(self.start_btn, 1)
-        record_layout.addWidget(self.record_icon_btn)
+        record_layout.addWidget(self.record_label)
         record_layout.addStretch(1)
         record_layout.addWidget(self.stop_btn, 1)
         record_layout.addStretch(1)
@@ -306,7 +305,7 @@ class RemoteController(object):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "RecSyncNG - Remote Controller"))
 
-        self.record_icon_btn.setText(_translate("MainWindow", ""))
+        self.record_label.setText(_translate("MainWindow", "on air"))
 
         self.start_btn.setText(_translate("MainWindow", "Record"))
 
@@ -327,7 +326,7 @@ class RemoteController(object):
 
         self.prefix_list_btn.setText(_translate("MainWindow", "Prefix List"))
         self.phase_align_btn.setText(_translate("MainWindow", "Phase Align"))
-        self.record_icon_btn.setStyleSheet('QPushButton {;background-color: ' + DIM_RED + ';}')
+        self.record_label.setStyleSheet('QLabel {;background-color: ' + DIM_RED + ';}')
 
 
 if __name__ == "__main__":
