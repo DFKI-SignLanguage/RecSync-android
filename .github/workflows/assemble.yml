@@ -31,7 +31,7 @@ jobs:
       - name: Decode Keystore
         env:
           ENCODED_STRING: ${{ secrets.JKS_FILE }}
-          SIGNING_KEY_STORE_PATH: ${{ secrets.KEY_STORE_PATH }}
+          SIGNING_KEY_STORE_PATH: ${{ secrets.KEYSTOREPATH }}
 
         run: |
           echo $ENCODED_STRING | base64 -i -d - > "${SIGNING_KEY_STORE_PATH}"
@@ -39,7 +39,7 @@ jobs:
 
       - name: Assemble release
         env:
-          SIGNING_KEY_STORE_PATH: ${{ secrets.SIGNING_KEY_STORE_PATH }}
+          SIGNING_KEY_STORE_PATH: ${{ secrets.KEYSTOREPATH }}
           SIGNING_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.JKS_PASSWORD }}
           SIGNING_STORE_PASSWORD: ${{ secrets.JKS_PASSWORD }}
