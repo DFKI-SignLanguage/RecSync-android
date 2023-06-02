@@ -1,12 +1,11 @@
 import argparse
 from pathlib import Path
-from typing import List, Tuple
+from typing import List
 import tempfile
 
 import pandas as pd
-import re
 
-from dataframes import compute_time_range, trim_repaired_into_interval
+from dataframes import compute_time_range, trim_repaired_into_interval, scan_session_dir
 from dataframes import repair_dropped_frames, compute_time_step
 
 from video import extract_frames
@@ -16,52 +15,6 @@ from video import extract_video_info
 
 DEFAULT_THRESHOLD_MILLIS = 10
 DEFAULT_THRESHOLD_NANOS = DEFAULT_THRESHOLD_MILLIS * 1000 * 1000  # millis * micros * nanos
-
-
-def scan_session_dir(input_dir: Path) -> Tuple[List[str], List[pd.DataFrame], List[str]]:
-    #
-    # Find all CSV files in the directory and read it into a data frame
-    # Use the following regular expression to check of the client ID is a 16-digit hexadecimal.
-    clientIDpattern = "[\\da-f]" * 16
-    patt = re.compile("^" + clientIDpattern + "$")
-
-    # Fill this list with the client IDs found n the directory
-    clientIDs: List[str] = []
-    for p in input_dir.iterdir():
-        # Check if the ClientID complies to the numerical format (using regex).
-        res = patt.match(p.stem)
-        if res:
-            print("Found client -->", p.stem)
-            clientIDs.append(p.stem)
-        else:
-            print("Discarding ", p.stem)
-
-    #
-    # Accumulates the list of dataframes and mp4 files in the same order of the client IDs.
-    df_list: List[pd.DataFrame] = []
-    mp4_list: List[str] = []
-
-    for cID in clientIDs:
-        client_dir = input_dir / cID
-        CSVs = list(client_dir.glob("*.csv"))
-        MP4s = list(client_dir.glob("*.mp4"))
-        #
-        # Consistency check. Each clientID folder must have exactly 1 CSV and 1 mp4.
-        if len(CSVs) != 1:
-            raise Exception(f"Expecting 1 CSV file for client {cID}. Found {len(CSVs)}.")
-
-        if len(MP4s) != 1:
-            raise Exception(f"Expecting 1 MP4 file for client {cID}. Found {len(MP4s)}.")
-
-        csv_file = CSVs[0]
-        mp4_file = MP4s[0]
-
-        df: pd.DataFrame = pd.read_csv(csv_file, header=None)
-
-        df_list.append(df)
-        mp4_list.append(str(mp4_file))
-
-    return clientIDs, df_list, mp4_list
 
 
 #

@@ -6,10 +6,8 @@ from typing import List, Tuple
 
 import pandas as pd
 
-from dataframes import compute_time_step
+from dataframes import compute_time_step, scan_session_dir
 from dataframes import repair_dropped_frames, compute_time_range
-
-from PostProcessVideos import scan_session_dir
 
 from video import video_info
 
