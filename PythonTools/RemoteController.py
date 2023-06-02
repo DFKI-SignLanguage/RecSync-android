@@ -15,10 +15,9 @@ from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout
 
 import websocket
-import threading
 
 # The default remote URL to connect to
-CONNECTION_URL = "ws://192.168.5.2:7867/remotecon"
+DEFAULT_CONNECTION_URL = "ws://192.168.5.2:7867/remotecon"
 
 # Three levels of red
 DIM_RED = "#5E1717"
@@ -28,7 +27,7 @@ BRIGHT_RED = "#cc2222"
 
 class RemoteController(object):
 
-    def __init__(self, MainWindow, websocket_url: str = CONNECTION_URL, connect_at_start: bool = True) -> None:
+    def __init__(self, MainWindow, websocket_url: str = DEFAULT_CONNECTION_URL, connect_at_start: bool = True) -> None:
         self._websocket_url = websocket_url
 
         self.setupUi(MainWindow)
@@ -46,7 +45,7 @@ class RemoteController(object):
             print("Skipping connection")
 
     def save_last_prefix_text(self):
-        with open('last_prefix.txt', 'w+') as file:
+        with open('../remote_control/last_prefix.txt', 'w+') as file:
             file.writelines(self.download_prefix_text.text())
 
     def show_error_popup(self, text: str = ""):
@@ -56,10 +55,10 @@ class RemoteController(object):
         msg.setIcon(QMessageBox.Critical)
         msg.exec_()
 
-    def startBtn(self):
+    def startRec(self):
         session_prefix = self.download_prefix_text.text()
         self.save_last_prefix_text()
-        if self.isPrefix(session_prefix) and self.start_btn.isEnabled():
+        if self.isPrefixValid(session_prefix) and self.start_btn.isEnabled():
             self.start_btn.setEnabled(False)
             self.stop_btn.setEnabled(True)
             self.record_label.setStyleSheet('QLabel {;background-color: ' + BRIGHT_RED + ';}')
@@ -70,7 +69,7 @@ class RemoteController(object):
                 self.save_last_prefix_text()
                 sys.exit()
 
-    def stopBtn(self):
+    def stopRec(self):
         self.save_last_prefix_text()
         if self.stop_btn.isEnabled() and not self.start_btn.isEnabled():
             self.stop_btn.setEnabled(False)
@@ -83,7 +82,7 @@ class RemoteController(object):
                 self.save_last_prefix_text()
                 sys.exit()
 
-    def statusBtn(self):
+    def askStatus(self):
         self.save_last_prefix_text()
         try:
             self.ws.send("STATUS")
@@ -94,7 +93,7 @@ class RemoteController(object):
             self.save_last_prefix_text()
             sys.exit()
 
-    def delete_all_btn(self):
+    def deleteRemoteContent(self):
         msgBox = QMessageBox()
         msgBox.setText("Are you sure you want to delete all the recordings and related files ?")
         msgBox.setInformativeText("This action cannot be reversed !!!")
@@ -110,7 +109,7 @@ class RemoteController(object):
                 self.save_last_prefix_text()
                 sys.exit()
 
-    def clearStatusBtn(self):
+    def clearStatus(self):
         self.status_label.setPlainText("")
 
     def prefixList(self):
@@ -122,11 +121,11 @@ class RemoteController(object):
             self.save_last_prefix_text()
             sys.exit()
 
-    def downloadBtn(self):
+    def requestDownload(self):
         endpoint = self.api_input.text()
         download_prefix = self.download_prefix_text.text()
         self.save_last_prefix_text()
-        if self.isPrefix(download_prefix):
+        if self.isPrefixValid(download_prefix):
             try:
                 self.ws.send("UPLOAD@@"+endpoint+","+download_prefix)
             except Exception as e:
@@ -134,7 +133,7 @@ class RemoteController(object):
                 self.save_last_prefix_text()
                 sys.exit()
 
-    def isPrefix(self, prefix_text):
+    def isPrefixValid(self, prefix_text):
         if prefix_text is None or len(prefix_text) == 0:
             self.show_error_popup('Prefix Text Missing')
             return False
@@ -175,7 +174,7 @@ class RemoteController(object):
         self.download_prefix_text.setFont(font)
         self.download_prefix_text.setObjectName("prefix_text")
         try:
-            with open('last_prefix.txt', 'r+') as file:
+            with open('../remote_control/last_prefix.txt', 'r+') as file:
                 data = file.readlines()
             if len(data) > 0:
                 self.download_prefix_text.setText(data[0])
@@ -198,7 +197,7 @@ class RemoteController(object):
         self.start_btn = QtWidgets.QPushButton()
         self.start_btn.setFont(font)
         self.start_btn.setObjectName("pushButton")
-        self.start_btn.clicked.connect(self.startBtn)
+        self.start_btn.clicked.connect(self.startRec)
 
         self.record_label = QtWidgets.QLabel()
         self.record_label.setFont(font)
@@ -207,7 +206,7 @@ class RemoteController(object):
         self.stop_btn = QtWidgets.QPushButton()
         self.stop_btn.setFont(font)
         self.stop_btn.setObjectName("pushButton_2")
-        self.stop_btn.clicked.connect(self.stopBtn)
+        self.stop_btn.clicked.connect(self.stopRec)
         self.stop_btn.setEnabled(False)
 
         record_layout = QHBoxLayout()
@@ -224,12 +223,12 @@ class RemoteController(object):
         self.status_clear_btn = QtWidgets.QPushButton()
         self.status_clear_btn.setFont(font)
         self.status_clear_btn.setObjectName("pushButton_5")
-        self.status_clear_btn.clicked.connect(self.clearStatusBtn)
+        self.status_clear_btn.clicked.connect(self.clearStatus)
 
         self.status_btn = QtWidgets.QPushButton()
         self.status_btn.setFont(font)
         self.status_btn.setObjectName("pushButton_3")
-        self.status_btn.clicked.connect(self.statusBtn)
+        self.status_btn.clicked.connect(self.askStatus)
 
         self.status_label = QtWidgets.QPlainTextEdit()
         self.status_label.setObjectName("plainTextEdit")
@@ -254,7 +253,7 @@ class RemoteController(object):
         self.download_btn = QtWidgets.QPushButton()
         self.download_btn.setFont(font)
         self.download_btn.setObjectName("pushButton_4")
-        self.download_btn.clicked.connect(self.downloadBtn)
+        self.download_btn.clicked.connect(self.requestDownload)
 
         self.api_input = QtWidgets.QLineEdit()
         self.api_input.setObjectName("textEdit")
@@ -262,7 +261,7 @@ class RemoteController(object):
         self.delete_btn = QtWidgets.QPushButton()
         self.delete_btn.setFont(font)
         self.delete_btn.setObjectName("pushButton_6")
-        self.delete_btn.clicked.connect(self.delete_all_btn)
+        self.delete_btn.clicked.connect(self.deleteRemoteContent)
 
         clients_control_layout = QtWidgets.QGridLayout()
         clients_control_layout.addWidget(QtWidgets.QLabel(""), 0, 0)
@@ -338,8 +337,8 @@ if __name__ == "__main__":
         "--dont-connect", action="store_true", help="If set, just show the GUI, without connecting to the master device."
     )
     parser.add_argument(
-        "--url", type=str, required=False, default=CONNECTION_URL,
-        help=f"Override the default URL websocket address (default: {CONNECTION_URL})."
+        "--url", type=str, required=False, default=DEFAULT_CONNECTION_URL,
+        help=f"Override the default URL websocket address (default: {DEFAULT_CONNECTION_URL})."
     )
 
     args = parser.parse_args()
