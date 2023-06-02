@@ -25,3 +25,23 @@ allprojects {
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
+
+android {
+    signingConfigs {
+        release {
+            storeFile file("RecSyncKeystore")
+            storePassword System.getenv("SIGNING_STORE_PASSWORD")
+            keyAlias System.getenv("SIGNING_KEY_ALIAS")
+            keyPassword System.getenv("SIGNING_KEY_PASSWORD")
+
+            // Optional, specify signing versions used
+            v1SigningEnabled true
+            v2SigningEnabled true
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+        }
+    }
+}
