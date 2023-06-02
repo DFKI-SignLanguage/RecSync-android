@@ -34,7 +34,7 @@ jobs:
           SIGNING_KEY_STORE_PATH: ${{ secrets.KEY_STORE_PATH }}
 
         run: |
-          echo $ENCODED_STRING | base64 -d > "$SIGNING_KEY_STORE_PATH"
+          echo $ENCODED_STRING | base64 -d -o $SIGNING_KEY_STORE_PATH
           
 
       - name: Assemble release
