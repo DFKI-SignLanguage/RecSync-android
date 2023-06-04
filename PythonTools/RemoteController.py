@@ -9,6 +9,7 @@
 
 import sys
 import argparse
+import json
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMessageBox
@@ -18,6 +19,8 @@ import websocket
 
 # The default remote URL to connect to
 DEFAULT_CONNECTION_URL = "ws://192.168.5.2:7867/remotecon"
+
+USER_PREFS_FILE = "user_prefs.json"
 
 # Three levels of red
 DIM_RED = "#5E1717"
@@ -35,6 +38,10 @@ class RemoteController(object):
         # Setup the WEB SOCKET
         self.ws = websocket.WebSocket()
 
+        # The 4-hexdigit of the master device
+        # Will be updated when remote devices send information.
+        self.masterID = None
+
         if connect_at_start:
             print(f"Connecting to {self._websocket_url}...")
             self.ws.connect(self._websocket_url)
@@ -44,9 +51,28 @@ class RemoteController(object):
         else:
             print("Skipping connection")
 
-    def save_last_prefix_text(self):
-        with open('../remote_control/last_prefix.txt', 'w+') as file:
-            file.writelines(self.download_prefix_text.text())
+    def save_user_prefs(self):
+
+        prefs = {
+            "session_id": self.download_prefix_text.text(),
+            "download_dir": self.local_dir_path_edit.text()
+        }
+
+        with open(USER_PREFS_FILE, 'w') as file:
+            print(f"Saving prefs to '{USER_PREFS_FILE}'...")
+            json.dump(obj=prefs, fp=file, indent=2)
+
+    def load_user_prefs(self):
+        import os
+
+        if not os.path.exists(USER_PREFS_FILE):
+            return
+
+        with open(USER_PREFS_FILE, 'r') as file:
+            print(f"Reading prefs from '{USER_PREFS_FILE}'...")
+            prefs = json.load(fp=file)
+            self.download_prefix_text.setText(prefs["session_id"])
+            self.local_dir_path_edit.setText(prefs["download_dir"])
 
     def show_error_popup(self, text: str = ""):
         msg = QMessageBox()
@@ -57,7 +83,7 @@ class RemoteController(object):
 
     def startRec(self):
         session_prefix = self.download_prefix_text.text()
-        self.save_last_prefix_text()
+        self.save_user_prefs()
         if self.isPrefixValid(session_prefix) and self.start_btn.isEnabled():
             self.start_btn.setEnabled(False)
             self.stop_btn.setEnabled(True)
@@ -66,11 +92,10 @@ class RemoteController(object):
                 self.ws.send("START_REC@@"+session_prefix)
             except Exception as e:
                 self.show_error_popup(f"Can't start recording: {e}")
-                self.save_last_prefix_text()
+                self.save_user_prefs()
                 sys.exit()
 
     def stopRec(self):
-        self.save_last_prefix_text()
         if self.stop_btn.isEnabled() and not self.start_btn.isEnabled():
             self.stop_btn.setEnabled(False)
             self.start_btn.setEnabled(True)
@@ -79,18 +104,17 @@ class RemoteController(object):
                 self.ws.send("STOP_REC")
             except Exception as e:
                 self.show_error_popup(f"Can't stop recording: {e}")
-                self.save_last_prefix_text()
+                self.save_user_prefs()
                 sys.exit()
 
     def askStatus(self):
-        self.save_last_prefix_text()
         try:
             self.ws.send("STATUS")
             message = self.ws.recv()
             self.status_label.setPlainText(message)
         except Exception as e:
             self.show_error_popup(f"Can't get clients status: {e}")
-            self.save_last_prefix_text()
+            self.save_user_prefs()
             sys.exit()
 
     def deleteRemoteContent(self):
@@ -100,37 +124,34 @@ class RemoteController(object):
         msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
         msgBox.setDefaultButton(QMessageBox.Cancel)
         ret = msgBox.exec()
-        self.save_last_prefix_text()
         if ret == QMessageBox.Ok:
             try:
                 self.ws.send("DELETE_ALL")
             except Exception as e:
                 self.show_error_popup(f"Can't delete clients' files: {e}")
-                self.save_last_prefix_text()
+                self.save_user_prefs()
                 sys.exit()
 
     def clearStatus(self):
         self.status_label.setPlainText("")
 
     def prefixList(self):
-        self.save_last_prefix_text()
         try:
             self.ws.send("PREFIX_LIST")
         except Exception as e:
             self.show_error_popup(f"Can't ask for clients' prefixes: {e}")
-            self.save_last_prefix_text()
+            self.save_user_prefs()
             sys.exit()
 
     def requestDownload(self):
         endpoint = self.api_input.text()
         download_prefix = self.download_prefix_text.text()
-        self.save_last_prefix_text()
         if self.isPrefixValid(download_prefix):
             try:
                 self.ws.send("UPLOAD@@"+endpoint+","+download_prefix)
             except Exception as e:
                 self.show_error_popup(f"Can't ask for clients' content: {e}")
-                self.save_last_prefix_text()
+                self.save_user_prefs()
                 sys.exit()
 
     def isPrefixValid(self, prefix_text):
@@ -140,12 +161,11 @@ class RemoteController(object):
         return True
 
     def phaseAlign(self):
-        self.save_last_prefix_text()
         try:
             self.ws.send("PHASE_ALIGN")
         except Exception as e:
             self.show_error_popup(f"Can't ask for phase alignment: {e}")
-            self.save_last_prefix_text()
+            self.save_user_prefs()
             sys.exit()
 
 #     def asyncTask(self, f_stop):
@@ -173,13 +193,6 @@ class RemoteController(object):
         self.download_prefix_text = QtWidgets.QLineEdit()
         self.download_prefix_text.setFont(font)
         self.download_prefix_text.setObjectName("prefix_text")
-        try:
-            with open('../remote_control/last_prefix.txt', 'r+') as file:
-                data = file.readlines()
-            if len(data) > 0:
-                self.download_prefix_text.setText(data[0])
-        except:
-            pass
 
         session_id_layout = QHBoxLayout()
         session_id_layout.addStretch(1)
@@ -273,15 +286,40 @@ class RemoteController(object):
         clients_control_layout.addWidget(self.delete_btn, 3, 2)
 
         #
-        # Compose all layouts
-        main_layout = QVBoxLayout()
-        main_layout.addLayout(session_id_layout)
-        main_layout.addLayout(record_layout)
-        main_layout.addLayout(status_layout)
-        main_layout.addWidget(self.status_label)
-        main_layout.addLayout(clients_control_layout)
-        #main_layout.addStretch(1)
+        # Compose REMOTE CONTROL layout
+        remote_control_layout = QVBoxLayout()
+        remote_control_layout.addLayout(session_id_layout)
+        remote_control_layout.addLayout(record_layout)
+        remote_control_layout.addLayout(status_layout)
+        remote_control_layout.addWidget(self.status_label)
+        remote_control_layout.addLayout(clients_control_layout)
+        #remote_control_layout.addStretch(1)
 
+        #
+        # Local Analysis panel
+        local_dir_label = QtWidgets.QLabel("Local download dir:")
+        local_dir_label.setFont(font)
+        self.local_dir_path_edit = QtWidgets.QLineEdit()
+        local_dir_layout = QHBoxLayout()
+        local_dir_layout.addWidget(local_dir_label)
+        local_dir_layout.addStretch(1)
+
+
+        show_latest_video_btn = QtWidgets.QPushButton(text="Play Latest")
+        show_latest_video_btn.setFont(font)
+        show_latest_video_btn.clicked.connect(self.showLatestMasterVideo)
+
+        local_analysis_layout = QVBoxLayout()
+        local_analysis_layout.addLayout(local_dir_layout)
+        local_analysis_layout.addWidget(self.local_dir_path_edit)
+        local_analysis_layout.addWidget(show_latest_video_btn)
+        local_analysis_layout.addStretch(1)
+
+        #
+        # Compose main layout
+        main_layout = QHBoxLayout()
+        main_layout.addLayout(remote_control_layout)
+        main_layout.addLayout(local_analysis_layout)
         self.centralwidget.setLayout(main_layout)
 
         #
@@ -299,6 +337,9 @@ class RemoteController(object):
         # Finalize
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
+        # Loda user preferences, setting some text in the components.
+        self.load_user_prefs()
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -327,7 +368,59 @@ class RemoteController(object):
         self.phase_align_btn.setText(_translate("MainWindow", "Phase Align"))
         self.record_label.setStyleSheet('QLabel {;background-color: ' + DIM_RED + ';}')
 
+    def showLatestMasterVideo(self):
+        from dataframes import scan_session_dir
+        from pathlib import Path
+        import subprocess
 
+        sessionID = self.download_prefix_text.text()
+        download_dir = self.local_dir_path_edit.text()
+
+        # We search in the download dir plus the session ID
+        download_path = Path(download_dir)
+        download_path = download_path / sessionID
+
+        if not download_path.exists():
+            self.show_error_popup(f"Path '{str(download_path)}' doesn't exist.")
+            return
+
+        client_ids, dataframes, videos = scan_session_dir(input_dir=download_path)
+
+        if len(client_ids) == 0:
+            self.show_error_popup("No clients found.")
+            return
+
+        # TODO -- temp test
+        self.masterID = '8b50'  # self.masterID
+
+        if self.masterID is None:
+            self.show_error_popup("Master ID still unknown.")
+            return
+
+        # Scan the list of clients IDs until we find one matching the master ID
+        leader_idx = None
+        for i, cID in enumerate(client_ids):
+            if cID.endswith(self.masterID):
+                leader_idx = i
+                break
+
+        if leader_idx is None:
+            self.show_error_popup(f"No client found for leader ID '{self.masterID}'.")
+            return
+
+        mp4_file = videos[leader_idx]
+        mp4_path = Path(mp4_file)
+
+        if not mp4_path.exists():
+            self.show_error_popup(f"File '{str(mp4_path)}' doesn't exists.")
+
+        print(f"Playing  '{mp4_path}' ...")
+
+        subprocess.call(["open", mp4_path])
+
+
+#
+#
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
@@ -355,4 +448,8 @@ if __name__ == "__main__":
     print("Showing...")
     MainWindow.show()
 
-    sys.exit(app.exec_())
+    # Blocking: shows the GUI
+    ret_code = app.exec_()
+    rc.save_user_prefs()
+
+    sys.exit(ret_code)
