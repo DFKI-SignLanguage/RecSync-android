@@ -3,8 +3,7 @@ name: Assemble
 on:
   push:
     branches:
-      - master
-      - remotecontrolling
+      - do-not-use
 
 jobs:
   assemble:
