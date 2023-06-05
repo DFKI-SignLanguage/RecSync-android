@@ -146,10 +146,11 @@ def scan_session_dir(input_dir: Path) -> Tuple[List[str], List[pd.DataFrame], Li
         # Check if the ClientID complies to the numerical format (using regex).
         res = patt.match(p.stem)
         if res:
-            print("Found client -->", p.stem)
+            # print("Found client -->", p.stem)
             clientIDs.append(p.stem)
         else:
-            print("Discarding ", p.stem)
+            # print("Discarding ", p.stem)
+            pass
 
     #
     # Accumulates the list of dataframes and mp4 files in the same order of the client IDs.

@@ -83,7 +83,6 @@ class RemoteController(object):
 
     def startRec(self):
         session_prefix = self.download_prefix_text.text()
-        self.save_user_prefs()
         if self.isPrefixValid(session_prefix) and self.start_btn.isEnabled():
             self.start_btn.setEnabled(False)
             self.stop_btn.setEnabled(True)
@@ -195,10 +194,10 @@ class RemoteController(object):
         self.download_prefix_text.setObjectName("prefix_text")
 
         session_id_layout = QHBoxLayout()
-        session_id_layout.addStretch(1)
+        #session_id_layout.addStretch(1)
         session_id_layout.addWidget(sess_label)
         session_id_layout.addWidget(self.download_prefix_text, 2)
-        session_id_layout.addStretch(1)
+        # session_id_layout.addStretch(1)
 
         #
         # REC/STOP
@@ -384,7 +383,11 @@ class RemoteController(object):
             self.show_error_popup(f"Path '{str(download_path)}' doesn't exist.")
             return
 
-        client_ids, dataframes, videos = scan_session_dir(input_dir=download_path)
+        try:
+            client_ids, dataframes, videos = scan_session_dir(input_dir=download_path)
+        except Exception as e:
+            self.show_error_popup(f"Exception scanning local dir: {str(e)}")
+            return
 
         if len(client_ids) == 0:
             self.show_error_popup("No clients found.")
@@ -413,10 +416,11 @@ class RemoteController(object):
 
         if not mp4_path.exists():
             self.show_error_popup(f"File '{str(mp4_path)}' doesn't exists.")
+            return
 
         print(f"Playing  '{mp4_path}' ...")
 
-        subprocess.call(["open", mp4_path])
+        subprocess.run(["open", mp4_path])
 
 
 #
