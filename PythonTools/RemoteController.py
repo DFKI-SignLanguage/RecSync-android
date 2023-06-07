@@ -55,7 +55,9 @@ class RemoteController(object):
 
         prefs = {
             "session_id": self.download_prefix_text.text(),
-            "download_dir": self.local_dir_path_edit.text()
+            "download_dir": self.local_dir_path_edit.text(),
+            "camera_exposure": self.camera_exposure_line.text(),
+            "camera_sensitivity": self.camera_sensitivity_line.text()
         }
 
         with open(USER_PREFS_FILE, 'w') as file:
@@ -73,6 +75,8 @@ class RemoteController(object):
             prefs = json.load(fp=file)
             self.download_prefix_text.setText(prefs["session_id"])
             self.local_dir_path_edit.setText(prefs["download_dir"])
+            self.camera_exposure_line.setText(prefs["camera_exposure"])
+            self.camera_sensitivity_line.setText(prefs["camera_sensitivity"])
 
     def show_error_popup(self, text: str = ""):
         msg = QMessageBox()
@@ -80,6 +84,17 @@ class RemoteController(object):
         msg.setText(text)
         msg.setIcon(QMessageBox.Critical)
         msg.exec_()
+
+    def sendCameraSettings(self):
+        try:
+            exp_fraction = int(self.camera_exposure_line.text())
+            exp_ns: int = int(1000000000 / exp_fraction)
+            sens: int = int(self.camera_sensitivity_line.text())
+            self.ws.send(f"CAMERA_SETTINGS@@{exp_ns},{sens}")
+        except Exception as e:
+            self.show_error_popup(f"Can't start recording: {e}")
+            self.save_user_prefs()
+            sys.exit()
 
     def startRec(self):
         session_prefix = self.download_prefix_text.text()
@@ -110,7 +125,7 @@ class RemoteController(object):
         try:
             self.ws.send("STATUS")
             message = self.ws.recv()
-            self.status_label.setPlainText(message)
+            self.status_textarea.setPlainText(message)
         except Exception as e:
             self.show_error_popup(f"Can't get clients status: {e}")
             self.save_user_prefs()
@@ -132,7 +147,7 @@ class RemoteController(object):
                 sys.exit()
 
     def clearStatus(self):
-        self.status_label.setPlainText("")
+        self.status_textarea.setPlainText("")
 
     def prefixList(self):
         try:
@@ -201,11 +216,6 @@ class RemoteController(object):
 
         #
         # REC/STOP
-        self.phase_align_btn = QtWidgets.QPushButton()
-        self.phase_align_btn.setFont(font)
-        self.phase_align_btn.setObjectName("pushButton_phase")
-        self.phase_align_btn.clicked.connect(self.phaseAlign)
-
         self.start_btn = QtWidgets.QPushButton()
         self.start_btn.setFont(font)
         self.start_btn.setObjectName("pushButton")
@@ -223,10 +233,9 @@ class RemoteController(object):
 
         record_layout = QHBoxLayout()
         record_layout.addStretch(1)
-        record_layout.addWidget(self.phase_align_btn, 1)
         record_layout.addWidget(self.start_btn, 1)
         record_layout.addWidget(self.record_label)
-        record_layout.addStretch(1)
+        # record_layout.addStretch(1)
         record_layout.addWidget(self.stop_btn, 1)
         record_layout.addStretch(1)
 
@@ -242,9 +251,10 @@ class RemoteController(object):
         self.status_btn.setObjectName("pushButton_3")
         self.status_btn.clicked.connect(self.askStatus)
 
-        self.status_label = QtWidgets.QPlainTextEdit()
-        self.status_label.setObjectName("plainTextEdit")
-        self.status_label.setPlainText("Clients list goes here...")
+        self.status_textarea = QtWidgets.QPlainTextEdit()
+        self.status_textarea.setObjectName("plainTextEdit")
+        self.status_textarea.setPlainText("Clients list goes here...")
+        self.status_textarea.setReadOnly(True)
 
         status_layout = QtWidgets.QHBoxLayout()
         status_layout.addStretch(1)
@@ -253,7 +263,32 @@ class RemoteController(object):
         status_layout.addStretch(1)
 
         #
-        # CLIENTS CONTROL
+        # CAMERA SETUP
+        camera_exposure_label = QtWidgets.QLabel(text="Exposure: 1/")
+        camera_exposure_label.setFont(font)
+        self.camera_exposure_line = QtWidgets.QLineEdit("32")
+        self.camera_exposure_line.setFont(font)
+        camera_sensitivity_label = QtWidgets.QLabel(text="Sensitivity:")
+        camera_sensitivity_label.setFont(font)
+        self.camera_sensitivity_line = QtWidgets.QLineEdit("240")
+        self.camera_sensitivity_line.setFont(font)
+        camera_settings_broadcast_btn = QtWidgets.QPushButton(text="Send")
+        camera_settings_broadcast_btn.setFont(font)
+        camera_settings_broadcast_btn.clicked.connect(self.sendCameraSettings)
+
+        camera_settings_layout = QHBoxLayout()
+        camera_settings_layout.addWidget(camera_exposure_label)
+        camera_settings_layout.addWidget(self.camera_exposure_line)
+        camera_settings_layout.addWidget(camera_sensitivity_label)
+        camera_settings_layout.addWidget(self.camera_sensitivity_line)
+        camera_settings_layout.addWidget(camera_settings_broadcast_btn)
+
+        #
+        # Download control
+        self.phase_align_btn = QtWidgets.QPushButton()
+        self.phase_align_btn.setFont(font)
+        self.phase_align_btn.setObjectName("pushButton_phase")
+        self.phase_align_btn.clicked.connect(self.phaseAlign)
 
         self.prefix_list_btn = QtWidgets.QPushButton()
         self.prefix_list_btn.setFont(font)
@@ -267,6 +302,16 @@ class RemoteController(object):
         self.download_btn.setObjectName("pushButton_4")
         self.download_btn.clicked.connect(self.requestDownload)
 
+        download_control_layout = QHBoxLayout()
+        download_control_layout.addStretch(1)
+        download_control_layout.addWidget(self.phase_align_btn)
+        # download_control_layout.addWidget(self.prefix_list_btn)
+        download_control_layout.addWidget(self.download_btn)
+        download_control_layout.addStretch(1)
+
+        #
+        # CLIENTS Info
+
         self.api_input = QtWidgets.QLineEdit()
         self.api_input.setObjectName("textEdit")
 
@@ -275,27 +320,24 @@ class RemoteController(object):
         self.delete_btn.setObjectName("pushButton_6")
         self.delete_btn.clicked.connect(self.deleteRemoteContent)
 
-        clients_control_layout = QtWidgets.QGridLayout()
-        clients_control_layout.addWidget(QtWidgets.QLabel(""), 0, 0)
-        clients_control_layout.addWidget(self.prefix_list_btn, 0, 1)
-        clients_control_layout.addWidget(self.download_btn, 0, 2)
-        clients_control_layout.addWidget(QtWidgets.QLabel(""), 0, 3)
-        clients_control_layout.addWidget(self.api_input, 1, 1, 1, 2)
-        clients_control_layout.addWidget(QtWidgets.QLabel(""), 2, 0)
-        clients_control_layout.addWidget(self.delete_btn, 3, 2)
+        clients_info_layout = QtWidgets.QGridLayout()
+        clients_info_layout.addWidget(self.api_input, 1, 1, 1, 2)
+        clients_info_layout.addWidget(QtWidgets.QLabel(""), 2, 0)
+        clients_info_layout.addWidget(self.delete_btn, 3, 2)
 
         #
         # Compose REMOTE CONTROL layout
         remote_control_layout = QVBoxLayout()
         remote_control_layout.addLayout(session_id_layout)
         remote_control_layout.addLayout(record_layout)
+        remote_control_layout.addLayout(download_control_layout)
         remote_control_layout.addLayout(status_layout)
-        remote_control_layout.addWidget(self.status_label)
-        remote_control_layout.addLayout(clients_control_layout)
-        #remote_control_layout.addStretch(1)
+        remote_control_layout.addLayout(camera_settings_layout)
+        remote_control_layout.addWidget(self.status_textarea)
+        remote_control_layout.addLayout(clients_info_layout)
 
         #
-        # Local Analysis panel
+        # Local Analysis layout
         local_dir_label = QtWidgets.QLabel("Local download dir:")
         local_dir_label.setFont(font)
         self.local_dir_path_edit = QtWidgets.QLineEdit()
@@ -304,7 +346,7 @@ class RemoteController(object):
         local_dir_layout.addStretch(1)
 
 
-        show_latest_video_btn = QtWidgets.QPushButton(text="Play Latest")
+        show_latest_video_btn = QtWidgets.QPushButton(text="Play Leader")
         show_latest_video_btn.setFont(font)
         show_latest_video_btn.clicked.connect(self.showLatestMasterVideo)
 
@@ -337,7 +379,7 @@ class RemoteController(object):
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
-        # Loda user preferences, setting some text in the components.
+        # Load user preferences: setting some text in the components.
         self.load_user_prefs()
 
     def retranslateUi(self, MainWindow):
@@ -364,7 +406,7 @@ class RemoteController(object):
         self.download_btn.setText(_translate("MainWindow", "Download"))
 
         self.prefix_list_btn.setText(_translate("MainWindow", "Prefix List"))
-        self.phase_align_btn.setText(_translate("MainWindow", "Phase Align"))
+        self.phase_align_btn.setText(_translate("MainWindow", "Align Phases"))
         self.record_label.setStyleSheet('QLabel {;background-color: ' + DIM_RED + ';}')
 
     def showLatestMasterVideo(self):
