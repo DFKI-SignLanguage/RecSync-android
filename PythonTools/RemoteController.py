@@ -10,6 +10,7 @@
 import sys
 import argparse
 import json
+import re
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMessageBox
@@ -73,10 +74,15 @@ class RemoteController(object):
         with open(USER_PREFS_FILE, 'r') as file:
             print(f"Reading prefs from '{USER_PREFS_FILE}'...")
             prefs = json.load(fp=file)
-            self.download_prefix_text.setText(prefs["session_id"])
-            self.local_dir_path_edit.setText(prefs["download_dir"])
-            self.camera_exposure_line.setText(prefs["camera_exposure"])
-            self.camera_sensitivity_line.setText(prefs["camera_sensitivity"])
+
+            if "session_id" in prefs:
+                self.download_prefix_text.setText(prefs["session_id"])
+            if "download_dir" in prefs:
+                self.local_dir_path_edit.setText(prefs["download_dir"])
+            if "camera_exposure" in prefs:
+                self.camera_exposure_line.setText(prefs["camera_exposure"])
+            if "camera_sensitivity" in prefs:
+                self.camera_sensitivity_line.setText(prefs["camera_sensitivity"])
 
     def show_error_popup(self, text: str = ""):
         msg = QMessageBox()
@@ -125,11 +131,17 @@ class RemoteController(object):
         try:
             self.ws.send("STATUS")
             message = self.ws.recv()
+
             self.status_textarea.setPlainText(message)
         except Exception as e:
             self.show_error_popup(f"Can't get clients status: {e}")
             self.save_user_prefs()
             sys.exit()
+
+    def parseStatusInfo(self, status: str) -> None:
+        # Extract the leader ID from the status text
+        pass
+
 
     def deleteRemoteContent(self):
         msgBox = QMessageBox()
