@@ -133,15 +133,20 @@ class RemoteController(object):
             message = self.ws.recv()
 
             self.status_textarea.setPlainText(message)
+            self.parseStatusInfo(message)
         except Exception as e:
             self.show_error_popup(f"Can't get clients status: {e}")
             self.save_user_prefs()
             sys.exit()
 
     def parseStatusInfo(self, status: str) -> None:
-        # Extract the leader ID from the status text
-        pass
-
+        """Extract the leader ID from the status text."""
+        # E.g.: "Leader b308: 0 clients."
+        pattern = "^Leader ([0-9a-f][0-9a-f][0-9a-f][0-9a-f]): .*"
+        res = re.match(pattern=pattern, string=status)
+        if res is not None:
+            self.masterID = res.group(1)
+            print(f"Master ID is {self.masterID}")
 
     def deleteRemoteContent(self):
         msgBox = QMessageBox()
@@ -446,9 +451,6 @@ class RemoteController(object):
         if len(client_ids) == 0:
             self.show_error_popup("No clients found.")
             return
-
-        # TODO -- temp test
-        self.masterID = '8b50'  # self.masterID
 
         if self.masterID is None:
             self.show_error_popup("Master ID still unknown.")
