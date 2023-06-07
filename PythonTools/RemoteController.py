@@ -39,9 +39,9 @@ class RemoteController(object):
         # Setup the WEB SOCKET
         self.ws = websocket.WebSocket()
 
-        # The 4-hexdigit of the master device
+        # The 4-hexdigit of the leader device
         # Will be updated when remote devices send information.
-        self.masterID = None
+        self.leaderID = None
 
         if connect_at_start:
             print(f"Connecting to {self._websocket_url}...")
@@ -145,8 +145,8 @@ class RemoteController(object):
         pattern = "^Leader ([0-9a-f][0-9a-f][0-9a-f][0-9a-f]): .*"
         res = re.match(pattern=pattern, string=status)
         if res is not None:
-            self.masterID = res.group(1)
-            print(f"Master ID is {self.masterID}")
+            self.leaderID = res.group(1)
+            print(f"Leader ID is {self.leaderID}")
 
     def deleteRemoteContent(self):
         msgBox = QMessageBox()
@@ -452,19 +452,19 @@ class RemoteController(object):
             self.show_error_popup("No clients found.")
             return
 
-        if self.masterID is None:
-            self.show_error_popup("Master ID still unknown.")
+        if self.leaderID is None:
+            self.show_error_popup("Leader ID still unknown.")
             return
 
-        # Scan the list of clients IDs until we find one matching the master ID
+        # Scan the list of clients IDs until we find one matching the leader ID
         leader_idx = None
         for i, cID in enumerate(client_ids):
-            if cID.endswith(self.masterID):
+            if cID.endswith(self.leaderID):
                 leader_idx = i
                 break
 
         if leader_idx is None:
-            self.show_error_popup(f"No client found for leader ID '{self.masterID}'.")
+            self.show_error_popup(f"No client found for leader ID '{self.leaderID}'.")
             return
 
         mp4_file = videos[leader_idx]
@@ -487,7 +487,7 @@ if __name__ == "__main__":
         description="Graphical interface for remotely controlling the RecSyncNG Android application."
     )
     parser.add_argument(
-        "--dont-connect", action="store_true", help="If set, just show the GUI, without connecting to the master device."
+        "--dont-connect", action="store_true", help="If set, just show the GUI, without connecting to the leader device."
     )
     parser.add_argument(
         "--url", type=str, required=False, default=DEFAULT_CONNECTION_URL,
