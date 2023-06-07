@@ -1228,9 +1228,10 @@ public class MainActivity extends Activity {
             List<Map<String, String>> dataFileList = new ArrayList<Map<String, String>>();
             String filename = "FileNotFound";
             Boolean fileFoundFlag = Boolean.FALSE;
+            String session_prefix = payloadParams[1]+"_";
             for(int i=0; i< list.length; i++){
                 filename = list[i].getName();
-                if(filename.startsWith(payloadParams[1])){
+                if(filename.startsWith(session_prefix)){
                     postRequestDataMap.put("VIDEO_FILE_PATH", videoFilePath + filename);
                     postRequestDataMap.put("CSV_FILE_PATH", csvFilePath + filename.split("\\.")[0] + ".csv" );
                     postRequestDataMap.put("CLIENT_ID", clientID);
