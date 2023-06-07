@@ -1,10 +1,7 @@
 # TODO:// Need to do changes based on file storage idea. i.e what folder structure etc 
-from flask import Flask, json, request, jsonify
+from flask import Flask, request, jsonify
 import os
-import urllib.request
-import base64
 from werkzeug.utils import secure_filename
-import multipart as mp
 
 try:
     from io import BytesIO
@@ -14,21 +11,24 @@ app = Flask(__name__)
 
 app.secret_key = "recSync-fileserver"
 
-UPLOAD_FOLDER = 'static/uploads/'
+UPLOAD_FOLDER = 'uploads/'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'mov', 'mp4', 'csv'])
 
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 @app.route('/')
 def main():
     return 'Homepage'
 
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
-   #import pdb; pdb.set_trace()
+
    if 'file' not in request.files:
            resp = jsonify({'message' : 'No file part in the request'})
            resp.status_code = 400
@@ -60,6 +60,7 @@ def upload_file():
    resp.status_code = 201
    return resp
 
+
 @app.route('/namelist', methods=['POST'])
 def print_filelist():
     print("CLIENT ID:" + request.form.get("client_id", "") +" have these FILES:" +  request.form.get("file_list", [])  )
@@ -68,8 +69,8 @@ def print_filelist():
     return resp
 
 
-
-
-
+#
+# MAIN
+#
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000,debug=True)
