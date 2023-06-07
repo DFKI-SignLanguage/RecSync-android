@@ -1,8 +1,9 @@
 name: Assemble
 
-on: 
-  pull_request:
-    - closed
+on:
+  push:
+    branches:
+      - do-not-use
 
 jobs:
   assemble:
@@ -25,8 +26,22 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
+            
+      - name: Decode Keystore
+        env:
+          ENCODED_STRING: ${{ secrets.JKS_FILE }}
+          SIGNING_KEY_STORE_PATH: ${{ secrets.KEYSTOREPATH }}
+
+        run: |
+          echo $ENCODED_STRING | base64 -i -d - > "${SIGNING_KEY_STORE_PATH}"
+          
 
       - name: Assemble release
+        env:
+          SIGNING_KEY_STORE_PATH: ${{ secrets.KEYSTOREPATH }}
+          SIGNING_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.JKS_PASSWORD }}
+          SIGNING_STORE_PASSWORD: ${{ secrets.JKS_PASSWORD }}
         run: ./gradlew assembleRelease
 
       - name: Run lint for release
@@ -50,27 +65,14 @@ jobs:
         with:
           name: debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
-          
-          
-          # Hier signing fixen
-          
-      #- name: Sign Android release
-       # uses: r0adkll/sign-android-release@v1
-        #with:
-         # releaseDirectory: app/build/outputs/apk/release
-          #signingKeyBase64: ${{ secrets.SIGNING_KEY }}
-          #alias: ${{ secrets.ALIAS }}
-          #keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
-          #keyPassword: ${{ secrets.KEY_PASSWORD }}
-
-    #  - uses: actions/upload-artifact@v2
-     #   with:
-      #    name: Signed app
-       #   path: ${{steps.sign_app.outputs.signedReleaseFile}}
-          
-  
 
 
+      - name: Upload Release
+        uses: actions/upload-artifact@v2
+        with:
+          name: release-apk
+          path: app/build/outputs/apk/release/*.apk 
+          
       - name: Cleanup Gradle Cache
         # Remove some files from the Gradle cache, so they aren't cached by GitHub Actions.
         # Restoring these files from a GitHub Actions cache might cause problems for future builds.
