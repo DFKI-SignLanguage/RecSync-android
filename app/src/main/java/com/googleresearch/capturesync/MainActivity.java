@@ -452,6 +452,18 @@ public class MainActivity extends Activity {
                 ((SoftwareSyncLeader) softwareSyncController.softwareSync)
                         .broadcastRpc(SoftwareSyncController.METHOD_DO_PHASE_ALIGN, "");
                 break;
+
+            case "CAMERA_SETTINGS":
+                try{
+                    String[] infoSubParts = infoParts[1].split(",");
+                    currentSensorExposureTimeNs = Long.parseLong(infoSubParts[0]);
+                    currentSensorSensitivity = Integer.parseInt(infoSubParts[1]);
+                    startPreview();
+                    scheduleBroadcast2a();
+                }catch(Exception e){Log.i(TAG,"Camera settings cas didn't work:" + e );}
+                break;
+
+
         }
     }
 
@@ -653,7 +665,7 @@ public class MainActivity extends Activity {
                     new OnSeekBarChangeListener() {
                         @Override
                         public void onProgressChanged(SeekBar seekBar, int value, boolean fromUser) {
-                            currentSensorSensitivity = seekBarValueToSensitivity(value);
+                                currentSensorSensitivity = seekBarValueToSensitivity(value);
                             sensorSensitivityTextView.setText("Sensitivity: " + currentSensorSensitivity);
                             Log.i(
                                     TAG,
@@ -994,7 +1006,7 @@ public class MainActivity extends Activity {
 
     private int seekBarValueToSensitivity(int value) {
         // Convert 0-10 values to 0-800 sensor sensitivities.
-        return (value * 800) / 10;
+        return (value * 1600) / 10;
     }
 
     @Override
