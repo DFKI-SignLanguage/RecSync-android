@@ -65,6 +65,8 @@ public class SoftwareSyncController implements Closeable {
     public static final int METHOD_UPLOAD_RECORDED_FILES = 200_005;
     public static final int METHOD_EMPTY_DEVICE = 200_006;
     public static final int METHOD_PREFIX_LIST = 200_007;
+    public static final int METHOD_UPDATE_FOCUS = 200_008;
+
 
     private long upcomingTriggerTimeNs;
 
@@ -220,6 +222,15 @@ public class SoftwareSyncController implements Closeable {
                                 () -> context.sendFilesToServer(payload)
                         );
                     });
+            clientRpcs.put(
+                    METHOD_UPDATE_FOCUS,
+                    payload -> {
+                        Log.v(TAG, "Update Focus function");
+                        context.runOnUiThread(
+                                () -> context.autoFocusUpdate(payload)
+                        );
+                    });
+
             clientRpcs.put(
                     METHOD_EMPTY_DEVICE,
                     payload -> {

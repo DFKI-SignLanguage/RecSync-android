@@ -18,6 +18,7 @@ package com.googleresearch.capturesync;
 
 import static android.hardware.camera2.CameraDevice.TEMPLATE_PREVIEW;
 import static android.hardware.camera2.CameraMetadata.CONTROL_AE_MODE_OFF;
+import static android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_AUTO;
 import static android.hardware.camera2.CameraMetadata.CONTROL_AWB_MODE_AUTO;
 import static android.hardware.camera2.CameraMetadata.CONTROL_MODE_AUTO;
 import static android.hardware.camera2.CaptureRequest.CONTROL_AE_MODE;
@@ -54,7 +55,7 @@ public class CaptureRequestFactory {
           List<Surface> imageSurfaces,
           long sensorExposureTimeNs,
           int sensorSensitivity,
-          boolean wantAutoExp)
+          boolean wantAutoExp, boolean enableFocus)
           throws CameraAccessException {
 
     CaptureRequest.Builder builder = device.createCaptureRequest(TEMPLATE_PREVIEW);
@@ -70,9 +71,13 @@ public class CaptureRequestFactory {
 
     // Auto white balance used, these could be locked and sent from the leader instead.
     builder.set(CONTROL_AWB_MODE, CONTROL_AWB_MODE_AUTO);
+    if(enableFocus==true){
+      builder.set(CONTROL_AF_MODE, CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+    }else{
+      builder.set(CONTROL_AF_MODE, CONTROL_AF_MODE_AUTO);
+    }
 
-    // Auto focus is used since different devices may have different manual focus values.
-    builder.set(CONTROL_AF_MODE, CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+
 
     if (viewfinderSurface != null) {
       builder.addTarget(viewfinderSurface);
@@ -96,9 +101,9 @@ public class CaptureRequestFactory {
           List<Surface> imageSurfaces,
           long sensorExposureTimeNs,
           int sensorSensitivity,
-          boolean wantAutoExp)
+          boolean wantAutoExp, boolean enableFocus)
           throws CameraAccessException {
-    CaptureRequest.Builder builder = makePreview(viewfinderSurface, imageSurfaces, sensorExposureTimeNs, sensorSensitivity, wantAutoExp);
+    CaptureRequest.Builder builder = makePreview(viewfinderSurface, imageSurfaces, sensorExposureTimeNs, sensorSensitivity, wantAutoExp, enableFocus);
     // Add recorder surface
     if (recorderSurface != null) {
       builder.addTarget(recorderSurface);

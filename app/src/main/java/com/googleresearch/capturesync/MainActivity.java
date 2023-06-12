@@ -118,6 +118,7 @@ public class MainActivity extends Activity {
     private String lastTimeStamp;
     private PeriodCalculator periodCalculator;
 
+
     public String getLastVideoPath() {
         return lastVideoPath;
     }
@@ -462,6 +463,19 @@ public class MainActivity extends Activity {
                     scheduleBroadcast2a();
                 }catch(Exception e){Log.i(TAG,"Camera settings cas didn't work:" + e );}
                 break;
+
+            case "UNLOCK_FOCUS":
+                autoFocusUpdate("0");
+                ((SoftwareSyncLeader) softwareSyncController.softwareSync)
+                        .broadcastRpc(SoftwareSyncController.METHOD_UPDATE_FOCUS,"0");
+                break;
+
+            case "LOCK_FOCUS":
+                autoFocusUpdate("1");
+                ((SoftwareSyncLeader) softwareSyncController.softwareSync)
+                        .broadcastRpc(SoftwareSyncController.METHOD_UPDATE_FOCUS,"1");
+                break;
+
 
 
         }
@@ -1083,6 +1097,38 @@ public class MainActivity extends Activity {
             Log.e(TAG, "Unable to reconfigure capture request", e);
         }
     }
+    public void autoFocusUpdate(String payload) {
+        Log.d(TAG, "Starting preview.");
+        boolean enableFocus;
+        if(payload=="0"){
+            enableFocus = true;
+        }else{
+            enableFocus = false;
+        }
+
+        try {
+            CaptureRequest.Builder previewRequestBuilder =
+                    cameraController
+                            .getRequestFactory()
+                            .makePreview(
+                                    viewfinderSurface,
+                                    cameraController.getOutputSurfaces(),
+                                    currentSensorExposureTimeNs,
+                                    currentSensorSensitivity, false, enableFocus);
+
+            captureSession.stopRepeating();
+            captureSession.setRepeatingRequest(
+                    previewRequestBuilder.build(),
+                    cameraController.getSynchronizerCaptureCallback(),
+                    cameraHandler);
+
+        } catch (CameraAccessException e) {
+            Log.w(TAG, "Unable to create preview.");
+//            payload = "3";
+        }
+//        getPeriodButton.setText("payload:" + payload);
+    }
+
 
     private void startPreview(boolean wantAutoExp) {
         Log.d(TAG, "Starting preview.");
@@ -1095,7 +1141,7 @@ public class MainActivity extends Activity {
                                     viewfinderSurface,
                                     cameraController.getOutputSurfaces(),
                                     currentSensorExposureTimeNs,
-                                    currentSensorSensitivity, wantAutoExp);
+                                    currentSensorSensitivity, wantAutoExp, false);
 
             captureSession.stopRepeating();
             captureSession.setRepeatingRequest(
@@ -1295,7 +1341,7 @@ public class MainActivity extends Activity {
                                     cameraController.getOutputSurfaces(),
                                     currentSensorExposureTimeNs,
                                     currentSensorSensitivity,
-                                    wantAutoExp);
+                                    wantAutoExp, false);
 
             captureSession.stopRepeating();
 
