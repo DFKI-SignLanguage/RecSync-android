@@ -115,6 +115,7 @@ import io.javalin.websocket.WsMessageContext;
 public class MainActivity extends Activity {
     private static final String TAG = "MainActivity";
     private static final int STATIC_LEN = 15_000;
+    private static final int REC_QUALITY = CamcorderProfile.QUALITY_1080P ;
     private String lastTimeStamp;
     private PeriodCalculator periodCalculator;
 
@@ -841,7 +842,7 @@ public class MainActivity extends Activity {
 //    }
 //    rawImageResolution = Collections.max(Arrays.asList(rawOutputSizes), new CompareSizesByArea());
 
-        CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH);
+        CamcorderProfile profile = CamcorderProfile.get(REC_QUALITY);
         List<Size> yuvOutputSizes = Arrays.stream(scm.getOutputSizes(ImageFormat.YUV_420_888)).filter(
                 size -> size.getHeight() <= profile.videoFrameHeight && size.getWidth() <= profile.videoFrameWidth
         ).collect(Collectors.toList());
@@ -1168,7 +1169,7 @@ public class MainActivity extends Activity {
         lastVideoPath = getOutputMediaFilePath(prefixText);
         recorder.setOutputFile(lastVideoPath);
 
-        CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_2160P);
+        CamcorderProfile profile = CamcorderProfile.get(REC_QUALITY);
         recorder.setVideoSize(profile.videoFrameWidth, profile.videoFrameHeight);
         recorder.setVideoEncodingBitRate(60*1000*1000);
         recorder.setVideoFrameRate(30);
