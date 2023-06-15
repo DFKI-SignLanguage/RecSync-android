@@ -116,6 +116,7 @@ public class MainActivity extends Activity {
     private static final String TAG = "MainActivity";
     private static final int STATIC_LEN = 15_000;
     private static final int REC_QUALITY = CamcorderProfile.QUALITY_1080P ;
+    private static final int REC_BITRATE = 10*1000*1000;
     private String lastTimeStamp;
     private PeriodCalculator periodCalculator;
 
@@ -1171,7 +1172,7 @@ public class MainActivity extends Activity {
 
         CamcorderProfile profile = CamcorderProfile.get(REC_QUALITY);
         recorder.setVideoSize(profile.videoFrameWidth, profile.videoFrameHeight);
-        recorder.setVideoEncodingBitRate(60*1000*1000);
+        recorder.setVideoEncodingBitRate(REC_BITRATE);
         recorder.setVideoFrameRate(30);
         Log.d(TAG, profile.videoBitRate + " Bitrate");
 
