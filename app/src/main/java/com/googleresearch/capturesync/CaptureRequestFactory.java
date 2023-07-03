@@ -18,6 +18,7 @@ package com.googleresearch.capturesync;
 
 import static android.hardware.camera2.CameraDevice.TEMPLATE_PREVIEW;
 import static android.hardware.camera2.CameraMetadata.CONTROL_AE_MODE_OFF;
+import static android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_AUTO;
 import static android.hardware.camera2.CameraMetadata.CONTROL_AWB_MODE_AUTO;
 import static android.hardware.camera2.CameraMetadata.CONTROL_MODE_AUTO;
 import static android.hardware.camera2.CaptureRequest.CONTROL_AE_MODE;
@@ -72,7 +73,8 @@ public class CaptureRequestFactory {
     builder.set(CONTROL_AWB_MODE, CONTROL_AWB_MODE_AUTO);
 
     // Auto focus is used since different devices may have different manual focus values.
-    builder.set(CONTROL_AF_MODE, CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+    //builder.set(CONTROL_AF_MODE, CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+    builder.set(CONTROL_AF_MODE, CONTROL_AF_MODE_AUTO);
 
     if (viewfinderSurface != null) {
       builder.addTarget(viewfinderSurface);
