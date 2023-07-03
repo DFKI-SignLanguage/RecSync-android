@@ -1098,7 +1098,7 @@ public class MainActivity extends Activity {
         }
     }
     public void autoFocusUpdate(String payload) {
-        Log.d(TAG, "Starting preview.");
+//        Log.d(TAG, "Starting preview.");
         boolean enableFocus;
         if(payload=="0"){
             enableFocus = true;
@@ -1123,7 +1123,7 @@ public class MainActivity extends Activity {
                     cameraHandler);
 
         } catch (CameraAccessException e) {
-            Log.w(TAG, "Unable to create preview.");
+//            Log.w(TAG, "Unable to create preview.");
 //            payload = "3";
         }
 //        getPeriodButton.setText("payload:" + payload);

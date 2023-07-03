@@ -155,6 +155,14 @@ public class SoftwareSyncController implements Closeable {
                     Log.v(TAG, "Starting phase alignment.");
                     phaseAlignController.startAlign();
                 });
+        sharedRpcs.put(
+                METHOD_UPDATE_FOCUS,
+                payload -> {
+                    Log.v(TAG, "Update Focus function");
+                    context.runOnUiThread(
+                            () -> context.autoFocusUpdate(payload)
+                    );
+                });
 
         sharedRpcs.put(
                 METHOD_SET_2A,
@@ -222,14 +230,14 @@ public class SoftwareSyncController implements Closeable {
                                 () -> context.sendFilesToServer(payload)
                         );
                     });
-            clientRpcs.put(
-                    METHOD_UPDATE_FOCUS,
-                    payload -> {
-                        Log.v(TAG, "Update Focus function");
-                        context.runOnUiThread(
-                                () -> context.autoFocusUpdate(payload)
-                        );
-                    });
+//            clientRpcs.put(
+//                    METHOD_UPDATE_FOCUS,
+//                    payload -> {
+//                        Log.v(TAG, "Update Focus function");
+//                        context.runOnUiThread(
+//                                () -> context.autoFocusUpdate(payload)
+//                        );
+//                    });
 
             clientRpcs.put(
                     METHOD_EMPTY_DEVICE,
@@ -248,8 +256,6 @@ public class SoftwareSyncController implements Closeable {
                                 () -> context.sendPrefixList()
                         );
                     });
-
-
 
             clientRpcs.put(
                     SyncConstants.METHOD_MSG_OFFSET_UPDATED,
