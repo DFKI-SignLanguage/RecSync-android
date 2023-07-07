@@ -20,7 +20,7 @@ DEFAULT_THRESHOLD_NANOS = DEFAULT_THRESHOLD_MILLIS * 1000 * 1000  # millis * mic
 #
 #
 #
-def main(input_dir: Path, output_dir: Path, threshold_ns: int):
+def post_process(input_dir: Path, output_dir: Path, threshold_ns: int = DEFAULT_THRESHOLD_NANOS):
 
     print(f"Scanning dir {str(input_dir)}...")
     clientIDs, df_list, mp4_list = scan_session_dir(input_dir)
@@ -96,7 +96,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
         description="Fixes the videos produced by the RecSync recording sessions."
-                    "Output videos will have the same number of frames,"
+                    "Converts the input recorder videos into videos with the same number of frames,"
                     "with missing/dropped frames inserted as (black) artificial data."
     )
     parser.add_argument(
@@ -105,6 +105,10 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--outfolder", "-o", type=str, help="The folder where the repaired and aligned frames will be stored.",
+        required=True
+    )
+    parser.add_argument(
+        "--create-outfolder", "-co", action="store_true", help="If the output folder doesn't exist, tries to create it.",
         required=True
     )
     parser.add_argument(
@@ -119,6 +123,7 @@ if __name__ == "__main__":
 
     infolder = Path(args.infolder)
     outfolder = Path(args.outfolder)
+    create_outfolder = args.create_outfolder
     threshold_millis = args.threshold
     threshold_nanos = threshold_millis * 1000 * 1000
 
@@ -126,6 +131,9 @@ if __name__ == "__main__":
         raise Exception(f"Input folder '{infolder}' doesn't exist.")
 
     if not outfolder.exists():
-        raise Exception(f"Output folder '{outfolder}' doesn't exist.")
+        if create_outfolder:
+            outfolder.mkdir(parents=True, exist_ok=True)
+        else:
+            raise Exception(f"Output folder '{outfolder}' doesn't exist.")
 
-    main(infolder, outfolder, threshold_nanos)
+    post_process(input_dir=infolder, output_dir=outfolder, threshold_ns=threshold_nanos)
