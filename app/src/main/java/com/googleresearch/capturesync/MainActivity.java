@@ -512,13 +512,13 @@ public class MainActivity extends Activity {
             case "UPDATE_FOCUS":
                 if (isAutofocusStarted) {
                     stopAutofocus();
-                    isAutofocusStarted = false;
+
                     makeFocusButton.setText("Start Autofocus");
                     ((SoftwareSyncLeader) softwareSyncController.softwareSync)
                             .broadcastRpc(SoftwareSyncController.METHOD_STOP_FOCUS,"");
                 } else {
                     startAutofocus();
-                    isAutofocusStarted = true;
+
                     makeFocusButton.setText("Stop Autofocus");
                     ((SoftwareSyncLeader) softwareSyncController.softwareSync)
                             .broadcastRpc(SoftwareSyncController.METHOD_START_FOCUS,"");
@@ -706,13 +706,11 @@ public class MainActivity extends Activity {
                     view -> {
                            if (isAutofocusStarted) {
                                 stopAutofocus();
-                                isAutofocusStarted = false;
                                 makeFocusButton.setText("Start Autofocus");
                                ((SoftwareSyncLeader) softwareSyncController.softwareSync)
                                        .broadcastRpc(SoftwareSyncController.METHOD_STOP_FOCUS,"");
                             } else {
                                 startAutofocus();
-                                isAutofocusStarted = true;
                                 makeFocusButton.setText("Stop Autofocus");
                                ((SoftwareSyncLeader) softwareSyncController.softwareSync)
                                        .broadcastRpc(SoftwareSyncController.METHOD_START_FOCUS,"");
@@ -1333,7 +1331,7 @@ public class MainActivity extends Activity {
 
     public void startAutofocus(){
         try {
-//            showLogPopup("Focus Button clicked in makefocus");
+            isAutofocusStarted = true;
             CaptureRequest.Builder previewRequestBuilder =
                     cameraController
                             .getRequestFactory()
@@ -1365,6 +1363,7 @@ public class MainActivity extends Activity {
     public void stopAutofocus(){
         try {
 //            showLogPopup("Focus Button clicked in makefocus");
+            isAutofocusStarted = false;
             CaptureRequest.Builder previewRequestBuilder =
                     cameraController
                             .getRequestFactory()
