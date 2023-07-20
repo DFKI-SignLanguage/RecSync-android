@@ -45,6 +45,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
+
             <Button
                 android:id="@+id/capture_still_button"
                 android:layout_width="match_parent"
@@ -104,6 +105,12 @@
                 android:layout_height="wrap_content"
                 android:max="20"
                 android:progress="3" />
+            <Button
+                android:id="@+id/make_focus_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Start Autofocus"/>
+
 
         </LinearLayout>
 

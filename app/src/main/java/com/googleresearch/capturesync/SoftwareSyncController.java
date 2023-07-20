@@ -65,7 +65,9 @@ public class SoftwareSyncController implements Closeable {
     public static final int METHOD_UPLOAD_RECORDED_FILES = 200_005;
     public static final int METHOD_EMPTY_DEVICE = 200_006;
     public static final int METHOD_PREFIX_LIST = 200_007;
-    public static final int METHOD_UPDATE_FOCUS = 200_008;
+    public static final int METHOD_STOP_FOCUS = 200_009;
+    public static final int METHOD_START_FOCUS = 200_010;
+
 
 
     private long upcomingTriggerTimeNs;
@@ -155,14 +157,7 @@ public class SoftwareSyncController implements Closeable {
                     Log.v(TAG, "Starting phase alignment.");
                     phaseAlignController.startAlign();
                 });
-        sharedRpcs.put(
-                METHOD_UPDATE_FOCUS,
-                payload -> {
-                    Log.v(TAG, "Update Focus function");
-                    context.runOnUiThread(
-                            () -> context.autoFocusUpdate(payload)
-                    );
-                });
+
 
         sharedRpcs.put(
                 METHOD_SET_2A,
@@ -201,6 +196,22 @@ public class SoftwareSyncController implements Closeable {
                     payload ->
                             context.runOnUiThread(
                                     () -> statusView.setText(softwareSync.getName() + ": Waiting for Sync")));
+            clientRpcs.put(
+                    METHOD_START_FOCUS,
+                    payload -> {
+                        Log.v(TAG, "Start Autofocus");
+                        context.runOnUiThread(
+                                () -> context.startAutofocus()
+                        );
+                    });
+            clientRpcs.put(
+                    METHOD_STOP_FOCUS,
+                    payload -> {
+                        Log.v(TAG, "Stop Autofocus");
+                        context.runOnUiThread(
+                                () -> context.stopAutofocus()
+                        );
+                    });
 
             clientRpcs.put(
                     METHOD_START_RECORDING,
