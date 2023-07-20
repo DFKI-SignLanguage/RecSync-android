@@ -19,11 +19,10 @@ package com.googleresearch.capturesync;
 import static android.hardware.camera2.CameraDevice.TEMPLATE_PREVIEW;
 import static android.hardware.camera2.CameraDevice.TEMPLATE_MANUAL;
 import static android.hardware.camera2.CameraMetadata.CONTROL_AE_MODE_OFF;
-import static android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_AUTO;
-import static android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_VIDEO;
+
 import static android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_OFF;
 import static android.hardware.camera2.CameraMetadata.CONTROL_AF_TRIGGER_CANCEL;
-import static android.hardware.camera2.CameraMetadata.CONTROL_AF_TRIGGER_IDLE;
+
 import static android.hardware.camera2.CameraMetadata.CONTROL_AWB_MODE_AUTO;
 import static android.hardware.camera2.CameraMetadata.CONTROL_MODE_AUTO;
 import static android.hardware.camera2.CaptureRequest.CONTROL_AE_MODE;

@@ -164,11 +164,18 @@ class RemoteController(object):
     def parseStatusInfo(self, status: str) -> None:
         """Extract the leader ID from the status text."""
         # E.g.: "Leader b308: 0 clients."
-        pattern = "^Leader ([0-9a-f][0-9a-f][0-9a-f][0-9a-f]): .*"
+        pattern = "^Leader ([0-9a-f][0-9a-f][0-9a-f][0-9a-f]).*"
+        # Alternative pattern, when there are no clients.
+        pattern2 = "^Leader : ([0-9a-f][0-9a-f][0-9a-f][0-9a-f])"
         res = re.match(pattern=pattern, string=status)
+        res2 = re.match(pattern=pattern2, string=status)
+
         if res is not None:
             self.leaderID = res.group(1)
             print(f"Leader ID is {self.leaderID}")
+        elif res2 is not None:
+            self.leaderID = res2.group(1)
+            print(f"Leader (alone) ID is {self.leaderID}")
 
     def deleteRemoteContent(self):
         msgBox = QMessageBox()
