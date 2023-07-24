@@ -15,7 +15,7 @@ def compute_time_step(video_timestamps: pd.DataFrame) -> float:
     video_timestamps (pd.DataFrame): A pandas DataFrame containing timestamps of a video.
 
     Returns:
-    float: The time step of the video time stamps.
+    float: The time step of the video time stamps, in nanoseconds.
     """
 
     first_col_name = video_timestamps.columns[0]
@@ -30,7 +30,7 @@ def repair_dropped_frames(df: pd.DataFrame, time_step: float) -> pd.DataFrame:
     first_col_name = df.columns[0]
 
     # Forces the type of the timestamps to int64
-    df[first_col_name] = pd.to_datetime(df[first_col_name]).astype(np.int64)
+    df[first_col_name] = df[first_col_name].astype(np.int64)
     # Retrieves the timestamps into a Series
     timestamps = df[first_col_name]
     # Will accumulate the repaired rows
@@ -63,7 +63,7 @@ def repair_dropped_frames(df: pd.DataFrame, time_step: float) -> pd.DataFrame:
     columns = ['timestamp', 'generated']
     output_df = pd.DataFrame(repaired_rows, columns=columns)
     # Forces the output timestamp type to int 64
-    output_df['timestamp'] = pd.to_datetime(output_df['timestamp']).astype(np.int64)
+    # output_df['timestamp'] = pd.to_datetime(output_df['timestamp']).astype(np.int64)
 
     return output_df
 

@@ -42,6 +42,7 @@ def post_process(input_dir: Path, output_dir: Path, threshold_ns: int = DEFAULT_
         time_step = compute_time_step(df)
         repaired_df = repair_dropped_frames(df=df, time_step=time_step)
         repaired_df_list.append(repaired_df)
+        print(f"Client ID {cID} repaired from {len(df)} to {len(repaired_df)} frames")
 
     assert len(clientIDs) == len(df_list) == len(mp4_list) == len(repaired_df_list)
 
