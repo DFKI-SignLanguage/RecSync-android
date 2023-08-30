@@ -55,8 +55,22 @@ def post_process(input_dir: Path, output_dir: Path, threshold_ns: int = DEFAULT_
 
     assert len(clientIDs) == len(trimmed_dataframes), f"Expected {len(clientIDs)} trimmed dataframes. Found f{len(trimmed_dataframes)}"
 
+    #
+    # Check if the number of frames in the dataframe matches with the timestamps between last and first entry
+    for cID, df in zip(clientIDs, trimmed_dataframes):
+        diff_info = df['timestamp'].diff().dropna().value_counts()
+        # print(diff_info)
+        estimated_step = diff_info.index[0]
+        first_ts = df['timestamp'].iloc[0]
+        last_ts = df['timestamp'].iloc[-1]
+        time_diff = last_ts - first_ts
+        # print(f"first/last timestamps: {first_ts}/{last_ts}. Diff={time_diff}")
+        estimated_frames = (time_diff / estimated_step) + 1
+        print(f"cID {cID}. Size={len(df)}. Diff={time_diff}. Estimated frames={estimated_frames}.")
+
+    #
     # Check that all the resulting dataframes have the same number of rows
-    print("Checking if all clients we have the same number of frames in the repaired amd trimmed tables...")
+    print("Checking if all clients we have the same number of frames in the repaired-and-trimmed tables...")
     client0ID = clientIDs[0]
     client0size = len(trimmed_dataframes[0])
     print(f"Client {client0ID} has {client0size} frames.")
