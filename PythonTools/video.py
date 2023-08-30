@@ -24,7 +24,7 @@ def video_info(video_path: str) -> Tuple[int, int, int]:
     # Get the list of all video streams
     video_streams = [stream for stream in info['streams'] if stream['codec_type'] == 'video']
     if len(video_streams) == 0:
-        raise BaseException("No video streams found in file '{}'".format(video_path))
+        raise Exception("No video streams found in file '{}'".format(video_path))
 
     # retrieve the first stream of type 'video'
     info_video = video_streams[0]
@@ -53,7 +53,7 @@ def extract_video_info(video_path: str) -> VideoInfo:
     # Get the list of all video streams
     video_streams = [stream for stream in info['streams'] if stream['codec_type'] == 'video']
     if len(video_streams) == 0:
-        raise BaseException("No video streams found in file '{}'".format(video_path))
+        raise Exception("No video streams found in file '{}'".format(video_path))
 
     # retrieve the first stream of type 'video'
     info_video = video_streams[0]
@@ -124,7 +124,7 @@ def extract_frames_ffmpeg(video_file: str, timestamps_df: pd.DataFrame, output_d
             frame_path = os.path.join(output_dir, str(timestamp) + ".jpg")
             in_frame = cv2.cvtColor(in_frame, cv2.COLOR_RGB2BGR)
             cv2.imwrite(frame_path, in_frame)
-            #PIL.Image.fromarray(in_frame, 'RGB').save(frame_path)
+            # PIL.Image.fromarray(in_frame, 'RGB').save(frame_path)
 
         else:
             print(f"At frame {fnum}, no more frames to extract from video '{video_file}'. Expected {len(timestamps)} frames.")
@@ -137,7 +137,7 @@ def extract_frames_ffmpeg(video_file: str, timestamps_df: pd.DataFrame, output_d
 
 def rebuild_video(dir: Path, frames: pd.DataFrame, video_info: VideoInfo, outfile: Path) -> None:
 
-    # We don't know the target video size, yet.
+    # Extract the vido information.
     frame_width = video_info.width
     frame_height = video_info.height
     fps = video_info.fps
@@ -162,6 +162,8 @@ def rebuild_video(dir: Path, frames: pd.DataFrame, video_info: VideoInfo, outfil
             .run_async(pipe_stdin=True)
     )
 
+    assert frame_width is not None and frame_height is not None and ffmpeg_video_out_process is not None
+
     #
     # Cycle through all the frames.
     for idx, row in frames.iterrows():
@@ -185,15 +187,10 @@ def rebuild_video(dir: Path, frames: pd.DataFrame, video_info: VideoInfo, outfil
                 raise Exception(f"The dimension of the read image ({img_width}x{img_height})"
                                 f" does not match the dimension of the generated video {frame_width}x{frame_height}.")
 
-            assert frame_width is not None and frame_height is not None and ffmpeg_video_out_process is not None
-
             # Send the frame to the ffmpeg process
             ffmpeg_video_out_process.stdin.write(img.tobytes())
 
         elif gen == "Generated":
-
-            # The first frame can NOT be a generated one
-            assert frame_width is not None and frame_height is not None and ffmpeg_video_out_process is not None
 
             # Create an artificial black frame
             print(f"Injecting Black frame at idx {idx}")
