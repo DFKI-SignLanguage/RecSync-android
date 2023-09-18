@@ -44,7 +44,7 @@ def extract_video_info(video_path: str) -> VideoInfo:
     Uses the ffmpeg.probe function to retrieve information about a video file.
 
     :param video_path: Path to a valid video file
-    :return: An instance of a VideoTuple named tuple with self-explaining information.
+    :return: An instance of a VideoInfo named tuple with self-explaining information.
     """
 
     #
