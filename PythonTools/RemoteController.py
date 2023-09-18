@@ -115,6 +115,28 @@ class RemoteController(object):
                 self.save_user_prefs()
                 sys.exit()
 
+    def enableFocus(self):
+            try:
+                if self.unlock_focus_btn.isEnabled():
+                    self.ws.send("UNLOCK_FOCUS")
+                    self.unlock_focus_btn.setEnabled(False)
+                    self.lock_focus_btn.setEnabled(True)
+            except Exception as e:
+                self.show_error_popup(f"Can't send enable focus command: {e}")
+                self.save_user_prefs()
+                sys.exit()
+
+    def lockFocus(self):
+                try:
+                    if self.lock_focus_btn.isEnabled():
+                        self.ws.send("LOCK_FOCUS")
+                        self.unlock_focus_btn.setEnabled(True)
+                        self.lock_focus_btn.setEnabled(False)
+                except Exception as e:
+                    self.show_error_popup(f"Can't send lock focus command: {e}")
+                    self.save_user_prefs()
+                    sys.exit()
+
     def stopRec(self):
         if self.stop_btn.isEnabled() and not self.start_btn.isEnabled():
             self.stop_btn.setEnabled(False)
@@ -255,6 +277,17 @@ class RemoteController(object):
         self.stop_btn.clicked.connect(self.stopRec)
         self.stop_btn.setEnabled(False)
 
+        self.unlock_focus_btn = QtWidgets.QPushButton()
+        self.unlock_focus_btn.setFont(font)
+        self.unlock_focus_btn.setObjectName("unlock_focus_button")
+        self.unlock_focus_btn.clicked.connect(self.enableFocus)
+
+        self.lock_focus_btn = QtWidgets.QPushButton()
+        self.lock_focus_btn.setFont(font)
+        self.lock_focus_btn.setObjectName("lock_focus_button")
+        self.lock_focus_btn.clicked.connect(self.lockFocus)
+        self.lock_focus_btn.setEnabled(False)
+
         record_layout = QHBoxLayout()
         record_layout.addStretch(1)
         record_layout.addWidget(self.start_btn, 1)
@@ -262,7 +295,10 @@ class RemoteController(object):
         # record_layout.addStretch(1)
         record_layout.addWidget(self.stop_btn, 1)
         record_layout.addStretch(1)
-
+        record_layout.addWidget(self.unlock_focus_btn, 1)
+        record_layout.addStretch(1)
+        record_layout.addWidget(self.lock_focus_btn, 1)
+        record_layout.addStretch(1)
         #
         # CLIENTS STATUS
         self.status_clear_btn = QtWidgets.QPushButton()
@@ -428,6 +464,8 @@ class RemoteController(object):
 
         self.download_prefix_text.setPlaceholderText(_translate("MainWindow", " Enter Session Prefix"))
         self.download_btn.setText(_translate("MainWindow", "Download"))
+        self.unlock_focus_btn.setText(_translate("MainWindow", "Unlock Focus"))
+        self.lock_focus_btn.setText(_translate("MainWindow", "Lock Focus"))
 
         self.prefix_list_btn.setText(_translate("MainWindow", "Prefix List"))
         self.phase_align_btn.setText(_translate("MainWindow", "Align Phases"))

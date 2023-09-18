@@ -16,6 +16,10 @@
 
 package com.googleresearch.capturesync;
 
+import static android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_AUTO;
+import static android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_OFF;
+import static android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE;
+
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCaptureSession.CaptureCallback;
 import android.hardware.camera2.CaptureRequest;
@@ -377,6 +381,13 @@ public class ImageMetadataSynchronizer {
           @Override
           public void onCaptureCompleted(
               CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
+              Float focusDistance = result.get(CaptureResult.LENS_FOCUS_DISTANCE);
+            if (focusDistance != null) {
+              context.setCurrentFocusDistance(focusDistance);
+            } else {
+              focusDistance = context.getCurrentFocusDistance();
+              context.setCurrentFocusDistance(0.0f);
+            }
             if (closed) {
               return;
             }
