@@ -261,6 +261,26 @@ class RemoteController(object):
         # session_id_layout.addStretch(1)
 
         #
+        # FOCUS CONTROL
+        self.unlock_focus_btn = QtWidgets.QPushButton()
+        self.unlock_focus_btn.setFont(font)
+        self.unlock_focus_btn.setObjectName("unlock_focus_button")
+        self.unlock_focus_btn.clicked.connect(self.enableFocus)
+
+        self.lock_focus_btn = QtWidgets.QPushButton()
+        self.lock_focus_btn.setFont(font)
+        self.lock_focus_btn.setObjectName("lock_focus_button")
+        self.lock_focus_btn.clicked.connect(self.lockFocus)
+        self.lock_focus_btn.setEnabled(False)
+
+        focus_layout = QHBoxLayout()
+        focus_layout.addStretch(1)
+        focus_layout.addWidget(self.unlock_focus_btn, 1)
+        # focus_layout.addStretch(1)
+        focus_layout.addWidget(self.lock_focus_btn, 1)
+        focus_layout.addStretch(1)
+
+        #
         # REC/STOP
         self.start_btn = QtWidgets.QPushButton()
         self.start_btn.setFont(font)
@@ -277,17 +297,6 @@ class RemoteController(object):
         self.stop_btn.clicked.connect(self.stopRec)
         self.stop_btn.setEnabled(False)
 
-        self.unlock_focus_btn = QtWidgets.QPushButton()
-        self.unlock_focus_btn.setFont(font)
-        self.unlock_focus_btn.setObjectName("unlock_focus_button")
-        self.unlock_focus_btn.clicked.connect(self.enableFocus)
-
-        self.lock_focus_btn = QtWidgets.QPushButton()
-        self.lock_focus_btn.setFont(font)
-        self.lock_focus_btn.setObjectName("lock_focus_button")
-        self.lock_focus_btn.clicked.connect(self.lockFocus)
-        self.lock_focus_btn.setEnabled(False)
-
         record_layout = QHBoxLayout()
         record_layout.addStretch(1)
         record_layout.addWidget(self.start_btn, 1)
@@ -295,10 +304,33 @@ class RemoteController(object):
         # record_layout.addStretch(1)
         record_layout.addWidget(self.stop_btn, 1)
         record_layout.addStretch(1)
-        record_layout.addWidget(self.unlock_focus_btn, 1)
-        record_layout.addStretch(1)
-        record_layout.addWidget(self.lock_focus_btn, 1)
-        record_layout.addStretch(1)
+
+        #
+        # Download control
+        self.phase_align_btn = QtWidgets.QPushButton()
+        self.phase_align_btn.setFont(font)
+        self.phase_align_btn.setObjectName("pushButton_phase")
+        self.phase_align_btn.clicked.connect(self.phaseAlign)
+
+        self.prefix_list_btn = QtWidgets.QPushButton()
+        self.prefix_list_btn.setFont(font)
+        self.prefix_list_btn.setObjectName("prefix_list_button")
+        self.prefix_list_btn.clicked.connect(self.prefixList)
+        # TODO -- tmp until it is fixed
+        self.prefix_list_btn.setEnabled(False)
+
+        self.download_btn = QtWidgets.QPushButton()
+        self.download_btn.setFont(font)
+        self.download_btn.setObjectName("pushButton_4")
+        self.download_btn.clicked.connect(self.requestDownload)
+
+        download_control_layout = QHBoxLayout()
+        download_control_layout.addStretch(1)
+        download_control_layout.addWidget(self.phase_align_btn)
+        # TODO -- download_control_layout.addWidget(self.prefix_list_btn)
+        download_control_layout.addWidget(self.download_btn)
+        download_control_layout.addStretch(1)
+
         #
         # CLIENTS STATUS
         self.status_clear_btn = QtWidgets.QPushButton()
@@ -344,34 +376,7 @@ class RemoteController(object):
         camera_settings_layout.addWidget(camera_settings_broadcast_btn)
 
         #
-        # Download control
-        self.phase_align_btn = QtWidgets.QPushButton()
-        self.phase_align_btn.setFont(font)
-        self.phase_align_btn.setObjectName("pushButton_phase")
-        self.phase_align_btn.clicked.connect(self.phaseAlign)
-
-        self.prefix_list_btn = QtWidgets.QPushButton()
-        self.prefix_list_btn.setFont(font)
-        self.prefix_list_btn.setObjectName("prefix_list_button")
-        self.prefix_list_btn.clicked.connect(self.prefixList)
-        # TODO -- tmp until it is fixed
-        self.prefix_list_btn.setEnabled(False)
-
-        self.download_btn = QtWidgets.QPushButton()
-        self.download_btn.setFont(font)
-        self.download_btn.setObjectName("pushButton_4")
-        self.download_btn.clicked.connect(self.requestDownload)
-
-        download_control_layout = QHBoxLayout()
-        download_control_layout.addStretch(1)
-        download_control_layout.addWidget(self.phase_align_btn)
-        # download_control_layout.addWidget(self.prefix_list_btn)
-        download_control_layout.addWidget(self.download_btn)
-        download_control_layout.addStretch(1)
-
-        #
         # CLIENTS Info
-
         self.api_input = QtWidgets.QLineEdit()
         self.api_input.setObjectName("textEdit")
 
@@ -389,6 +394,7 @@ class RemoteController(object):
         # Compose REMOTE CONTROL layout
         remote_control_layout = QVBoxLayout()
         remote_control_layout.addLayout(session_id_layout)
+        remote_control_layout.addLayout(focus_layout)
         remote_control_layout.addLayout(record_layout)
         remote_control_layout.addLayout(download_control_layout)
         remote_control_layout.addLayout(status_layout)
