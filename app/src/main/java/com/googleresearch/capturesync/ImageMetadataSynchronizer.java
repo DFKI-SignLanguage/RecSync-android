@@ -30,6 +30,8 @@ import android.media.ImageReader;
 import android.os.Handler;
 import android.util.Log;
 import android.util.Pair;
+import android.widget.Toast;
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -385,7 +387,7 @@ public class ImageMetadataSynchronizer {
             if (focusDistance != null) {
               context.setCurrentFocusDistance(focusDistance);
             } else {
-              focusDistance = context.getCurrentFocusDistance();
+              // focusDistance = context.getCurrentFocusDistance();
               context.setCurrentFocusDistance(0.0f);
             }
             if (closed) {

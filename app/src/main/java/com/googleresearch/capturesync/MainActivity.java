@@ -17,14 +17,9 @@
 
 package com.googleresearch.capturesync;
 
-import static android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_AUTO;
 import static android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_OFF;
 import static android.hardware.camera2.CameraMetadata.CONTROL_AF_TRIGGER_CANCEL;
-import static android.hardware.camera2.CameraMetadata.CONTROL_AF_TRIGGER_IDLE;
 import static android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE;
-import static android.hardware.camera2.CaptureRequest.CONTROL_AF_TRIGGER;
-import static android.hardware.camera2.CaptureRequest.LENS_FOCUS_DISTANCE;
-import static java.security.AccessController.getContext;
 
 import android.Manifest.permission;
 import android.annotation.SuppressLint;
@@ -50,14 +45,12 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.CamcorderProfile;
 import android.media.MediaCodec;
 import android.media.MediaRecorder;
-import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.provider.Settings;
-import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.util.Size;
 import android.view.Gravity;
@@ -72,7 +65,6 @@ import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.provider.Settings.Secure;
 
 import com.googleresearch.capturesync.softwaresync.CSVLogger;
 import com.googleresearch.capturesync.softwaresync.SoftwareSyncLeader;
@@ -103,29 +95,28 @@ import java.util.stream.Collectors;
 
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
-import org.apache.hc.client5.http.entity.mime.FileBody;
-import org.apache.hc.client5.http.entity.mime.HttpMultipartMode;
-import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
-import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.HttpResponse;
 import org.apache.hc.core5.http.NameValuePair;
 import org.apache.hc.core5.http.message.BasicNameValuePair;
-import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import io.javalin.Javalin;
 import io.javalin.websocket.WsMessageContext;
 
-/* For Debug Popup*/
+/*
+// For Debug Popup
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import androidx.appcompat.app.AppCompatActivity;
+*/
+
+
 /**
  * Main activity for the libsoftwaresync demo app using the camera 2 API.
  */
@@ -134,6 +125,8 @@ public class MainActivity extends Activity {
     private static final int STATIC_LEN = 15_000;
     private static final int REC_QUALITY = CamcorderProfile.QUALITY_1080P ;
     private static final int REC_BITRATE = 10*1000*1000;
+    private static final int REC_FPS = 30;
+
     private String lastTimeStamp;
     private PeriodCalculator periodCalculator;
 
@@ -182,10 +175,6 @@ public class MainActivity extends Activity {
     // Phase config file to use for phase alignment, configs are located in the raw folder.
     private final int phaseConfigFile = R.raw.default_phaseconfig;
 
-//    public MediaRecorder getMediaRecorder() {
-//        return mediaRecorder;
-//    }
-
     private MediaRecorder mediaRecorder = new MediaRecorder();
     private boolean isVideoRecording = false;
 
@@ -213,6 +202,7 @@ public class MainActivity extends Activity {
     private Button phaseAlignButton;
     private Button makeFocusButton;
     private Button unlockFocusButton;
+    private TextView focusDistanceTextView ;
     private SeekBar exposureSeekBar;
     private SeekBar sensitivitySeekBar;
     private TextView statusTextView;
@@ -287,14 +277,20 @@ public class MainActivity extends Activity {
             Javalin jwsObj = Javalin.create().start(7867);
             jwsObj.ws("/remotecon", ws -> {
                 ws.onConnect(ctx -> {
-                    Log.i(TAG, "web socket connection established");
+                    String msg = "Remote controller connected." ;
+                    Log.i(TAG, msg);
+                    runOnUiThread(() -> {Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();});
                 });
                 ws.onClose(ctx -> {
-                    Log.i(TAG, "web socket connection closed");
+                    String msg = "Remote controller Disconnected." ;
+                    Log.i(TAG, msg);
+                    runOnUiThread(() -> {Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();});
                 });
                 ws.onMessage(this::handleWebSocketMsg);
                 ws.onError(ctx -> {
-                    Log.i(TAG, "web socket error");
+                    String msg = "Remote controller: web socket error.";
+                    Log.i(TAG, msg);
+                    runOnUiThread(() -> {Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();});
                 });
 
             });
@@ -303,6 +299,7 @@ public class MainActivity extends Activity {
 
     }
 
+    /*
     private void showLogPopup(String logs){
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         LayoutInflater inflater = getLayoutInflater();
@@ -324,6 +321,7 @@ public class MainActivity extends Activity {
         AlertDialog alertDialog = builder.create();
         alertDialog.show();
     }
+    */
 
     private void onCreateWithPermission() {
         setContentView(R.layout.activity_main);
@@ -423,7 +421,7 @@ public class MainActivity extends Activity {
 
     }
 
-    private void handleWebSocketMsg(@NotNull WsMessageContext wsMessageContext){
+    private void handleWebSocketMsg(WsMessageContext wsMessageContext){
         String msg = wsMessageContext.message();
         String[] infoParts = msg.split("@@");
         String command = infoParts[0];
@@ -433,32 +431,21 @@ public class MainActivity extends Activity {
 
         switch(command){
             case "START_REC":
-                Log.i(TAG,"handling the message in START, Session_Prefix :" + infoParts[1]);
+                Log.i(TAG,"handling websocket message START, Session_Prefix :" + infoParts[1]);
                 this.sessionPrefixText = infoParts[1];
                 btn.callOnClick();
-                this.isVideoRecording = true;
-                //startVideo(false);
-                //((SoftwareSyncLeader) softwareSyncController.softwareSync)
-                //        .broadcastRpc(
-                //                SoftwareSyncController.METHOD_START_RECORDING,
-                //                "0");
-                break;
-            case "STOP_REC":
-                Log.i(TAG,"handling the message in STOP");
-                btn.callOnClick();
-                //startPreview(false);
-                //((SoftwareSyncLeader) softwareSyncController.softwareSync)
-                //        .broadcastRpc(
-                //                SoftwareSyncController.METHOD_STOP_RECORDING,
-                //                "0");
                 break;
 
+            case "STOP_REC":
+                Log.i(TAG,"handling websocket message STOP");
+                btn.callOnClick();
+                break;
 
             case "UPLOAD" :
-                Log.i(TAG,"handling the message in DOWNLOAD:" + infoParts[1]);
+                Log.i(TAG,"handling websocket message DOWNLOAD:" + infoParts[1]);
                 // infoParts[1] is the payload
                 sendFilesToServer(infoParts[1]);
-               ((SoftwareSyncLeader) softwareSyncController.softwareSync)
+                ((SoftwareSyncLeader) softwareSyncController.softwareSync)
                         .broadcastRpc(
                                 SoftwareSyncController.METHOD_UPLOAD_RECORDED_FILES,
                                infoParts[1]);
@@ -467,12 +454,12 @@ public class MainActivity extends Activity {
 
             case "STATUS" :
                 String status = softwaresyncStatusTextView.getText().toString();
-                Log.i(TAG,"handling the message in STATUS:" + status );
+                Log.i(TAG,"handling websocket message STATUS:" + status );
                 wsMessageContext.send(status);
                 break;
 
             case "DELETE_ALL" :
-                Log.i(TAG,"handling the message in DELETE_ALL" );
+                Log.i(TAG,"handling websocket message DELETE_ALL" );
                 deleteAllFiles();
                 ((SoftwareSyncLeader) softwareSyncController.softwareSync)
                         .broadcastRpc(
@@ -482,58 +469,64 @@ public class MainActivity extends Activity {
                 break;
 
             case "PREFIX_LIST" :
-                Log.i(TAG,"handling the message in PREFIX_LIST" );
+                Log.i(TAG,"handling websocket message PREFIX_LIST" );
                 sendPrefixList();
                 ((SoftwareSyncLeader) softwareSyncController.softwareSync)
                         .broadcastRpc(
                                 SoftwareSyncController.METHOD_PREFIX_LIST,
                                 "0");
-
                 break;
+
             case "PING" :
-                Log.i(TAG,"handling the message in PING" );
+                Log.i(TAG,"handling websocket message PING" );
                 wsMessageContext.send("PONG");
                 break;
+
             case "PHASE_ALIGN" :
+                Log.i(TAG,"handling websocket message PHASE_ALIGN" );
+
                 ((SoftwareSyncLeader) softwareSyncController.softwareSync)
                         .broadcastRpc(SoftwareSyncController.METHOD_DO_PHASE_ALIGN, "");
                 break;
 
             case "CAMERA_SETTINGS":
-                try{
+                Log.i(TAG,"handling websocket message CAMERA_SETTINGS" );
+                try {
                     String[] infoSubParts = infoParts[1].split(",");
                     currentSensorExposureTimeNs = Long.parseLong(infoSubParts[0]);
                     currentSensorSensitivity = Integer.parseInt(infoSubParts[1]);
+                    runOnUiThread(
+                            () -> {Toast.makeText(this,
+                                    "Setting camera parameters to " + prettyExposureValue(currentSensorExposureTimeNs) +
+                                            ", " + currentSensorSensitivity,
+                                    Toast.LENGTH_SHORT).show();}
+                    );
                     startPreview();
                     scheduleBroadcast2a();
-                }catch(Exception e){Log.i(TAG,"Camera settings cas didn't work:" + e );}
+                } catch(Exception e){Log.i(TAG,"Camera settings cas didn't work:" + e );}
                 break;
 
-            case "UPDATE_FOCUS":
-                if (isAutofocusStarted) {
-                    stopAutofocus();
+            case "START_AUTOFOCUS":
+                Log.i(TAG,"handling websocket message START_AUTOFOCUS" );
 
-                    makeFocusButton.setText("Start Autofocus");
-                    ((SoftwareSyncLeader) softwareSyncController.softwareSync)
-                            .broadcastRpc(SoftwareSyncController.METHOD_STOP_FOCUS,"");
-                } else {
-                    startAutofocus();
+                startAutofocus();
 
-                    makeFocusButton.setText("Stop Autofocus");
-                    ((SoftwareSyncLeader) softwareSyncController.softwareSync)
-                            .broadcastRpc(SoftwareSyncController.METHOD_START_FOCUS,"");
-                }
+                ((SoftwareSyncLeader) softwareSyncController.softwareSync)
+                        .broadcastRpc(SoftwareSyncController.METHOD_START_FOCUS,"");
 
+                makeFocusButton.setText("Stop Autofocus");
                 break;
 
-//            case "LOCK_FOCUS":
-////                autoFocusUpdate("1");
-//                ((SoftwareSyncLeader) softwareSyncController.softwareSync)
-//                        .broadcastRpc(SoftwareSyncController.METHOD_UPDATE_FOCUS,"1");
-//                break;
+            case "STOP_AUTOFOCUS":
+                Log.i(TAG,"handling websocket message STOP_AUTOFOCUS" );
 
+                stopAutofocus();
 
+                ((SoftwareSyncLeader) softwareSyncController.softwareSync)
+                        .broadcastRpc(SoftwareSyncController.METHOD_STOP_FOCUS,"");
 
+                makeFocusButton.setText("Start Autofocus");
+                break ;
         }
     }
 
@@ -639,6 +632,7 @@ public class MainActivity extends Activity {
             captureStillButton.setVisibility(View.VISIBLE);
             phaseAlignButton.setVisibility(View.VISIBLE);
             makeFocusButton.setVisibility(View.VISIBLE);
+            focusDistanceTextView.setVisibility(View.VISIBLE);
 
             getPeriodButton.setVisibility(View.VISIBLE);
             exposureSeekBar.setVisibility(View.VISIBLE);
@@ -646,26 +640,25 @@ public class MainActivity extends Activity {
 
             captureStillButton.setOnClickListener(
                     view -> {
-                        //Log.i(TAG, "Click event triggered to stop video");
-                        String check = new Boolean(isVideoRecording).toString() ;
-                        Log.i(TAG, "IS VIDEO RECORDING: " + check );
+                        Log.i(TAG, "Record button clicked. isVideoRecording=" + isVideoRecording);
                         if (isVideoRecording) {
+                            Log.i(TAG, "Stopping recording.");
+                            runOnUiThread(() -> {Toast.makeText(this, "Stopping video recording.", Toast.LENGTH_SHORT).show();});
                             stopVideo();
                             ((SoftwareSyncLeader) softwareSyncController.softwareSync)
                                     .broadcastRpc(
                                             SoftwareSyncController.METHOD_STOP_RECORDING,
                                             "0");
-                            Log.i(TAG, "Stopping recording ÖÖ :");
                             startPreview();
 
                         } else {
-
+                            Log.i(TAG, "Starting recording " + this.sessionPrefixText);
+                            runOnUiThread(() -> {Toast.makeText(this, "Starting video recording.", Toast.LENGTH_SHORT).show();});
                             startVideo(false, this.sessionPrefixText);
                             ((SoftwareSyncLeader) softwareSyncController.softwareSync)
                                     .broadcastRpc(
                                             SoftwareSyncController.METHOD_START_RECORDING,
                                             this.sessionPrefixText);
-                            Log.i(TAG, "Starting recording " + this.sessionPrefixText);
                         }
 
 /*            if (cameraController.getOutputSurfaces().isEmpty()) {
@@ -778,13 +771,14 @@ public class MainActivity extends Activity {
                         }
                     });
         } else {
-            // Client. All controls invisible.
+            // Client. Most controls are invisible.
             captureStillButton.setVisibility(View.INVISIBLE);
             phaseAlignButton.setVisibility(View.INVISIBLE);
             getPeriodButton.setVisibility(View.VISIBLE);
             exposureSeekBar.setVisibility(View.INVISIBLE);
             sensitivitySeekBar.setVisibility(View.INVISIBLE);
             makeFocusButton.setVisibility(View.INVISIBLE);
+            focusDistanceTextView.setVisibility(View.VISIBLE);
 
             captureStillButton.setOnClickListener(null);
             phaseAlignButton.setOnClickListener(null);
@@ -1180,12 +1174,15 @@ public class MainActivity extends Activity {
     public void setCurrentFocusDistance(float cfd){
         currentFocusDistance = cfd;
     }
+
     public Float getCurrentFocusDistance(){
         return currentFocusDistance;
     }
+
     private int clamp(int value, int min, int max) {
         return Math.max(min, Math.min(max, value));
     }
+
     private Rect calculateFocusRect(){
         Rect sensorSize = cameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
         int centerX = sensorSize.centerX();
@@ -1199,6 +1196,7 @@ public class MainActivity extends Activity {
         int bottom = top + focusAreaSize;
         return new Rect(left, top, right, bottom);
     }
+
     private void startPreview(boolean wantAutoExp) {
         Log.d(TAG, "Starting preview.");
 
@@ -1251,10 +1249,9 @@ public class MainActivity extends Activity {
         lastTimeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss",
                 Locale.getDefault()).format(new Date());
         String mediaFile;
-        //mediaFile = dir.toString() + File.separator + "VID_" + lastTimeStamp + ".mp4";
+
         mediaFile = dir.toString() + File.separator + prefixText +"_"+ lastTimeStamp + ".mp4";
         return mediaFile;
-
     }
 
     private void createRecorderSurface() throws IOException {
@@ -1276,8 +1273,6 @@ public class MainActivity extends Activity {
         recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
         /*
          * create video output file
-         */
-        /*
          * set output file in media recorder
          */
 
@@ -1287,7 +1282,7 @@ public class MainActivity extends Activity {
         CamcorderProfile profile = CamcorderProfile.get(REC_QUALITY);
         recorder.setVideoSize(profile.videoFrameWidth, profile.videoFrameHeight);
         recorder.setVideoEncodingBitRate(REC_BITRATE);
-        recorder.setVideoFrameRate(30);
+        recorder.setVideoFrameRate(REC_FPS);
         Log.d(TAG, profile.videoBitRate + " Bitrate");
 
         recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
@@ -1354,7 +1349,10 @@ public class MainActivity extends Activity {
                     previewRequestBuilder.build(),
                     cameraController.getSynchronizerCaptureCallback(),
                     cameraHandler);
-            Toast.makeText(this, "Auto focus started", Toast.LENGTH_SHORT).show();
+            runOnUiThread(
+                    () -> {Toast.makeText(this, "Auto focus started", Toast.LENGTH_SHORT).show();}
+            ) ;
+
 
         } catch (CameraAccessException e) {
             Log.w(TAG, "Unable to create preview. in make focus");
@@ -1362,7 +1360,6 @@ public class MainActivity extends Activity {
     }
     public void stopAutofocus(){
         try {
-//            showLogPopup("Focus Button clicked in makefocus");
             isAutofocusStarted = false;
             CaptureRequest.Builder previewRequestBuilder =
                     cameraController
@@ -1385,7 +1382,11 @@ public class MainActivity extends Activity {
                     cameraController.getSynchronizerCaptureCallback(),
                     cameraHandler);
 
-            Toast.makeText(this, "Auto focus stopped", Toast.LENGTH_SHORT).show();
+            runOnUiThread(
+                    () -> {Toast.makeText(this, "Auto focus stopped with focal distance " + String.format("%.3f", currentFocusDistance), Toast.LENGTH_SHORT).show();
+                    });
+
+
         } catch (CameraAccessException e) {
             Log.w(TAG, "Unable to create preview. in make focus");
         }
@@ -1449,7 +1450,6 @@ public class MainActivity extends Activity {
 
     public void startVideo(boolean wantAutoExp, String prefixText) {
         Log.d(TAG, "Starting video.");
-        //Toast.makeText(this, "Started recording video", Toast.LENGTH_LONG).show();
 
         isVideoRecording = true;
         try {
@@ -1484,7 +1484,6 @@ public class MainActivity extends Activity {
                     previewRequestBuilder.build(),
                     cameraController.getSynchronizerCaptureCallback(),
                     cameraHandler);
-            Toast.makeText(this, "Video Recording Started", Toast.LENGTH_SHORT).show();
         } catch (CameraAccessException e) {
             Log.w(TAG, "Unable to create video request.");
         } catch (IOException e) {
@@ -1494,14 +1493,10 @@ public class MainActivity extends Activity {
 
     public void stopVideo() {
         // Switch to preview again
-
-        //Toast.makeText(this, "Stopped recording video", Toast.LENGTH_LONG).show();
-
         isVideoRecording = false;
         mediaRecorder.stop();
         mLogger.close();
         mLogger = null;
-        Toast.makeText(this, "Video Recording Stopped", Toast.LENGTH_SHORT).show();
     }
 
     private void stopPreview() {
