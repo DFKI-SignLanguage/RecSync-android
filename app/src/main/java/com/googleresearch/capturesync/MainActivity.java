@@ -17,9 +17,14 @@
 
 package com.googleresearch.capturesync;
 
+import static android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_AUTO;
 import static android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_OFF;
 import static android.hardware.camera2.CameraMetadata.CONTROL_AF_TRIGGER_CANCEL;
+import static android.hardware.camera2.CameraMetadata.CONTROL_AF_TRIGGER_IDLE;
 import static android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE;
+import static android.hardware.camera2.CaptureRequest.CONTROL_AF_TRIGGER;
+import static android.hardware.camera2.CaptureRequest.LENS_FOCUS_DISTANCE;
+import static java.security.AccessController.getContext;
 
 import android.Manifest.permission;
 import android.annotation.SuppressLint;
@@ -45,12 +50,14 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.CamcorderProfile;
 import android.media.MediaCodec;
 import android.media.MediaRecorder;
+import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.provider.Settings;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.util.Size;
 import android.view.Gravity;
@@ -65,6 +72,7 @@ import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.provider.Settings.Secure;
 
 import com.googleresearch.capturesync.softwaresync.CSVLogger;
 import com.googleresearch.capturesync.softwaresync.SoftwareSyncLeader;
@@ -100,6 +108,7 @@ import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.HttpResponse;
 import org.apache.hc.core5.http.NameValuePair;
 import org.apache.hc.core5.http.message.BasicNameValuePair;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -260,20 +269,23 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.v(TAG, "onCreate");
+        Toast.makeText(this, "RecSyncNG: creating ...", Toast.LENGTH_SHORT).show();
+
         periodCalculator = new PeriodCalculator();
         //checkPermissions();
         permissionsGranted = true;
         if (permissionsGranted) {
             onCreateWithPermission();
-
         } else {
             // Wait for user to finish permissions before setting up the app.
         }
+        Toast.makeText(this, "RecSyncNG: initializing SyncController ...", Toast.LENGTH_SHORT).show();
+
         softwareSyncController =
                 new SoftwareSyncController(this, phaseAlignController, softwaresyncStatusTextView);
 
         if(softwareSyncController.isLeader()) {
-            Toast.makeText(this, "Starting websocket", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Starting websocket", Toast.LENGTH_SHORT).show();
             Javalin jwsObj = Javalin.create().start(7867);
             jwsObj.ws("/remotecon", ws -> {
                 ws.onConnect(ctx -> {
@@ -421,7 +433,7 @@ public class MainActivity extends Activity {
 
     }
 
-    private void handleWebSocketMsg(WsMessageContext wsMessageContext){
+    private void handleWebSocketMsg(@NotNull WsMessageContext wsMessageContext){
         String msg = wsMessageContext.message();
         String[] infoParts = msg.split("@@");
         String command = infoParts[0];

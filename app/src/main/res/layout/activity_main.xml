@@ -111,7 +111,6 @@
                 android:layout_height="wrap_content"
                 android:text="Start Autofocus"/>
 
-
         </LinearLayout>
 
     </LinearLayout>

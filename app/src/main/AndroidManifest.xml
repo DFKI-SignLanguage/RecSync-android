@@ -2,6 +2,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.googleresearch.capturesync">
 
+  <uses-feature
+      android:name="android.hardware.camera"
+      android:required="true" />
+
   <uses-permission android:name="android.permission.CAMERA" />
   <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
   <uses-permission android:name="android.permission.READ_PRIVILEGED_PHONE_STATE"

@@ -30,7 +30,6 @@ import android.media.ImageReader;
 import android.os.Handler;
 import android.util.Log;
 import android.util.Pair;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
