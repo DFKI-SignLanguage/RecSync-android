@@ -35,6 +35,8 @@ On the controlling machine runs a Remote Controller (together with a small http 
 ### Android devices installation and setup
 
 * Install the RecSynchNG apk on all devices
+* Go to the settings of your Android device `Settings -> Apps -> RecSynch`
+  * and give permission to use `Camera` and `Files and Media`
 * Select one device as _Leader_:
   * configure its Ethernet adaptor with:
     * Static IP: 192.168.5.2
