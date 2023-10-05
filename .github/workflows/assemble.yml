@@ -1,6 +1,9 @@
 name: Assemble
 
-on: [push, workflow_dispatch]
+on:
+  push:
+    branches:
+      - do-not-use
 
 jobs:
   assemble:
@@ -23,8 +26,22 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
+            
+      - name: Decode Keystore
+        env:
+          ENCODED_STRING: ${{ secrets.JKS_FILE }}
+          SIGNING_KEY_STORE_PATH: ${{ secrets.KEYSTOREPATH }}
+
+        run: |
+          echo $ENCODED_STRING | base64 -i -d - > "${SIGNING_KEY_STORE_PATH}"
+          
 
       - name: Assemble release
+        env:
+          SIGNING_KEY_STORE_PATH: ${{ secrets.KEYSTOREPATH }}
+          SIGNING_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.JKS_PASSWORD }}
+          SIGNING_STORE_PASSWORD: ${{ secrets.JKS_PASSWORD }}
         run: ./gradlew assembleRelease
 
       - name: Run lint for release
@@ -41,7 +58,21 @@ jobs:
         with:
           name: lint-results
           path: app/build/reports/lint-results-*.*
+          
 
+      - name: Upload Debug
+        uses: actions/upload-artifact@v2
+        with:
+          name: debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+
+
+      - name: Upload Release
+        uses: actions/upload-artifact@v2
+        with:
+          name: release-apk
+          path: app/build/outputs/apk/release/*.apk 
+          
       - name: Cleanup Gradle Cache
         # Remove some files from the Gradle cache, so they aren't cached by GitHub Actions.
         # Restoring these files from a GitHub Actions cache might cause problems for future builds.

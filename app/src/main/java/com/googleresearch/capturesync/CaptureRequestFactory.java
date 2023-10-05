@@ -17,14 +17,21 @@
 package com.googleresearch.capturesync;
 
 import static android.hardware.camera2.CameraDevice.TEMPLATE_PREVIEW;
+import static android.hardware.camera2.CameraDevice.TEMPLATE_MANUAL;
 import static android.hardware.camera2.CameraMetadata.CONTROL_AE_MODE_OFF;
+
+import static android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_OFF;
+import static android.hardware.camera2.CameraMetadata.CONTROL_AF_TRIGGER_CANCEL;
+
 import static android.hardware.camera2.CameraMetadata.CONTROL_AWB_MODE_AUTO;
 import static android.hardware.camera2.CameraMetadata.CONTROL_MODE_AUTO;
 import static android.hardware.camera2.CaptureRequest.CONTROL_AE_MODE;
 import static android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE;
 import static android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE;
+import static android.hardware.camera2.CaptureRequest.CONTROL_AF_TRIGGER;
 import static android.hardware.camera2.CaptureRequest.CONTROL_AWB_MODE;
 import static android.hardware.camera2.CaptureRequest.CONTROL_MODE;
+import static android.hardware.camera2.CaptureRequest.LENS_FOCUS_DISTANCE;
 import static android.hardware.camera2.CaptureRequest.SENSOR_EXPOSURE_TIME;
 import static android.hardware.camera2.CaptureRequest.SENSOR_SENSITIVITY;
 
@@ -32,6 +39,8 @@ import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CaptureRequest;
 import android.view.Surface;
+import android.widget.Toast;
+
 import com.googleresearch.capturesync.ImageMetadataSynchronizer.CaptureRequestTag;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,25 +63,22 @@ public class CaptureRequestFactory {
           List<Surface> imageSurfaces,
           long sensorExposureTimeNs,
           int sensorSensitivity,
-          boolean wantAutoExp)
+          boolean wantAutoExp, boolean enableFocus)
           throws CameraAccessException {
 
     CaptureRequest.Builder builder = device.createCaptureRequest(TEMPLATE_PREVIEW);
     if (wantAutoExp) {
       builder.set(CONTROL_AE_MODE, CONTROL_AWB_MODE_AUTO);
-
     } else {
       // Manually set exposure and sensitivity using UI sliders on the leader.
       builder.set(CONTROL_AE_MODE, CONTROL_AE_MODE_OFF);
       builder.set(SENSOR_EXPOSURE_TIME, sensorExposureTimeNs);
       builder.set(SENSOR_SENSITIVITY, sensorSensitivity);
     }
-
+    builder.set(CONTROL_AF_TRIGGER, CONTROL_AF_TRIGGER_CANCEL);
+    builder.set(CONTROL_AF_MODE, CONTROL_AF_MODE_OFF);
     // Auto white balance used, these could be locked and sent from the leader instead.
     builder.set(CONTROL_AWB_MODE, CONTROL_AWB_MODE_AUTO);
-
-    // Auto focus is used since different devices may have different manual focus values.
-    builder.set(CONTROL_AF_MODE, CONTROL_AF_MODE_CONTINUOUS_PICTURE);
 
     if (viewfinderSurface != null) {
       builder.addTarget(viewfinderSurface);
@@ -86,6 +92,7 @@ public class CaptureRequestFactory {
     return builder;
   }
 
+
   /**
    * An alternative capture request for video,
    * includes everything from preview + mediaRecorder
@@ -96,9 +103,9 @@ public class CaptureRequestFactory {
           List<Surface> imageSurfaces,
           long sensorExposureTimeNs,
           int sensorSensitivity,
-          boolean wantAutoExp)
+          boolean wantAutoExp, boolean enableFocus)
           throws CameraAccessException {
-    CaptureRequest.Builder builder = makePreview(viewfinderSurface, imageSurfaces, sensorExposureTimeNs, sensorSensitivity, wantAutoExp);
+    CaptureRequest.Builder builder = makePreview(viewfinderSurface, imageSurfaces, sensorExposureTimeNs, sensorSensitivity, wantAutoExp, enableFocus);
     // Add recorder surface
     if (recorderSurface != null) {
       builder.addTarget(recorderSurface);
@@ -109,10 +116,13 @@ public class CaptureRequestFactory {
 
   public CaptureRequest.Builder makeFrameInjectionRequest(
           long desiredExposureTimeNs, List<Surface> imageSurfaces) throws CameraAccessException {
+
     CaptureRequest.Builder builder = device.createCaptureRequest(TEMPLATE_PREVIEW);
     builder.set(CONTROL_MODE, CONTROL_MODE_AUTO);
     builder.set(CONTROL_AE_MODE, CONTROL_AE_MODE_OFF);
     builder.set(SENSOR_EXPOSURE_TIME, desiredExposureTimeNs);
+    builder.set(CONTROL_AF_TRIGGER, CONTROL_AF_TRIGGER_CANCEL);
+    builder.set(CONTROL_AF_MODE, CONTROL_AF_MODE_OFF);
     // TODO: Inserting frame duration directly would be more accurate than inserting exposure since
     // {@code frame duration ~ exposure + variable overhead}. However setting frame duration may not
     // be supported on many android devices, so we use exposure time here.
