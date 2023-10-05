@@ -211,7 +211,6 @@ public class MainActivity extends Activity {
     private Button phaseAlignButton;
     private Button makeFocusButton;
     private Button unlockFocusButton;
-    private TextView focusDistanceTextView ;
     private SeekBar exposureSeekBar;
     private SeekBar sensitivitySeekBar;
     private TextView statusTextView;
@@ -644,7 +643,6 @@ public class MainActivity extends Activity {
             captureStillButton.setVisibility(View.VISIBLE);
             phaseAlignButton.setVisibility(View.VISIBLE);
             makeFocusButton.setVisibility(View.VISIBLE);
-            focusDistanceTextView.setVisibility(View.VISIBLE);
 
             getPeriodButton.setVisibility(View.VISIBLE);
             exposureSeekBar.setVisibility(View.VISIBLE);
@@ -790,7 +788,6 @@ public class MainActivity extends Activity {
             exposureSeekBar.setVisibility(View.INVISIBLE);
             sensitivitySeekBar.setVisibility(View.INVISIBLE);
             makeFocusButton.setVisibility(View.INVISIBLE);
-            focusDistanceTextView.setVisibility(View.VISIBLE);
 
             captureStillButton.setOnClickListener(null);
             phaseAlignButton.setOnClickListener(null);
