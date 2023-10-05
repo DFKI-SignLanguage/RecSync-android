@@ -98,7 +98,7 @@ class RemoteController(object):
             sens: int = int(self.camera_sensitivity_line.text())
             self.ws.send(f"CAMERA_SETTINGS@@{exp_ns},{sens}")
         except Exception as e:
-            self.show_error_popup(f"Can't start recording: {e}")
+            self.show_error_popup(f"Can't set camera parameters: {e}")
             self.save_user_prefs()
             sys.exit()
 
@@ -115,25 +115,21 @@ class RemoteController(object):
                 self.save_user_prefs()
                 sys.exit()
 
-    def enableFocus(self):
+    def startAutofocus(self):
             try:
-                if self.unlock_focus_btn.isEnabled():
-                    self.ws.send("UNLOCK_FOCUS")
-                    self.unlock_focus_btn.setEnabled(False)
-                    self.lock_focus_btn.setEnabled(True)
+                if self.start_autofocus_btn.isEnabled():
+                    self.ws.send("START_AUTOFOCUS")
             except Exception as e:
-                self.show_error_popup(f"Can't send enable focus command: {e}")
+                self.show_error_popup(f"Can't send start autofocus command: {e}")
                 self.save_user_prefs()
                 sys.exit()
 
-    def lockFocus(self):
+    def stopAutofocus(self):
                 try:
-                    if self.lock_focus_btn.isEnabled():
-                        self.ws.send("LOCK_FOCUS")
-                        self.unlock_focus_btn.setEnabled(True)
-                        self.lock_focus_btn.setEnabled(False)
+                    if self.stop_autofocus_btn.isEnabled():
+                        self.ws.send("STOP_AUTOFOCUS")
                 except Exception as e:
-                    self.show_error_popup(f"Can't send lock focus command: {e}")
+                    self.show_error_popup(f"Can't send stop autofocus focus command: {e}")
                     self.save_user_prefs()
                     sys.exit()
 
@@ -246,7 +242,7 @@ class RemoteController(object):
         font.setPointSize(20)
 
         #
-        # SESSION
+        # SESSION panel (left side)
         sess_label = QtWidgets.QLabel("Session ID:")
         sess_label.setFont(font)
 
@@ -262,22 +258,19 @@ class RemoteController(object):
 
         #
         # FOCUS CONTROL
-        self.unlock_focus_btn = QtWidgets.QPushButton()
-        self.unlock_focus_btn.setFont(font)
-        self.unlock_focus_btn.setObjectName("unlock_focus_button")
-        self.unlock_focus_btn.clicked.connect(self.enableFocus)
+        self.start_autofocus_btn = QtWidgets.QPushButton()
+        self.start_autofocus_btn.setFont(font)
+        self.start_autofocus_btn.clicked.connect(self.startAutofocus)
 
-        self.lock_focus_btn = QtWidgets.QPushButton()
-        self.lock_focus_btn.setFont(font)
-        self.lock_focus_btn.setObjectName("lock_focus_button")
-        self.lock_focus_btn.clicked.connect(self.lockFocus)
-        self.lock_focus_btn.setEnabled(False)
+        self.stop_autofocus_btn = QtWidgets.QPushButton()
+        self.stop_autofocus_btn.setFont(font)
+        self.stop_autofocus_btn.clicked.connect(self.stopAutofocus)
 
         focus_layout = QHBoxLayout()
         focus_layout.addStretch(1)
-        focus_layout.addWidget(self.unlock_focus_btn, 1)
+        focus_layout.addWidget(self.start_autofocus_btn, 1)
         # focus_layout.addStretch(1)
-        focus_layout.addWidget(self.lock_focus_btn, 1)
+        focus_layout.addWidget(self.stop_autofocus_btn, 1)
         focus_layout.addStretch(1)
 
         #
@@ -403,7 +396,11 @@ class RemoteController(object):
         remote_control_layout.addLayout(clients_info_layout)
 
         #
-        # Local Analysis layout
+        #
+        # Local Analysis layout (Right side panel)
+
+        #
+        # DOWNLOAD PATH
         local_dir_label = QtWidgets.QLabel("Local download dir:")
         local_dir_label.setFont(font)
         self.local_dir_path_edit = QtWidgets.QLineEdit()
@@ -411,11 +408,18 @@ class RemoteController(object):
         local_dir_layout.addWidget(local_dir_label)
         local_dir_layout.addStretch(1)
 
-
+        #
+        # PLAY
         show_latest_video_btn = QtWidgets.QPushButton(text="Play Leader")
         show_latest_video_btn.setFont(font)
         show_latest_video_btn.clicked.connect(self.showLatestMasterVideo)
 
+        #
+        #
+
+
+        #
+        # Compose session panel layout
         local_analysis_layout = QVBoxLayout()
         local_analysis_layout.addLayout(local_dir_layout)
         local_analysis_layout.addWidget(self.local_dir_path_edit)
@@ -470,8 +474,8 @@ class RemoteController(object):
 
         self.download_prefix_text.setPlaceholderText(_translate("MainWindow", " Enter Session Prefix"))
         self.download_btn.setText(_translate("MainWindow", "Download"))
-        self.unlock_focus_btn.setText(_translate("MainWindow", "Unlock Focus"))
-        self.lock_focus_btn.setText(_translate("MainWindow", "Lock Focus"))
+        self.start_autofocus_btn.setText(_translate("MainWindow", "Start Autofocus"))
+        self.stop_autofocus_btn.setText(_translate("MainWindow", "Stop Autofocus"))
 
         self.prefix_list_btn.setText(_translate("MainWindow", "Prefix List"))
         self.phase_align_btn.setText(_translate("MainWindow", "Align Phases"))
