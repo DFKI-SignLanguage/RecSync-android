@@ -17,14 +17,9 @@
 
 package com.googleresearch.capturesync;
 
-import static android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_AUTO;
 import static android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_OFF;
 import static android.hardware.camera2.CameraMetadata.CONTROL_AF_TRIGGER_CANCEL;
-import static android.hardware.camera2.CameraMetadata.CONTROL_AF_TRIGGER_IDLE;
 import static android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE;
-import static android.hardware.camera2.CaptureRequest.CONTROL_AF_TRIGGER;
-import static android.hardware.camera2.CaptureRequest.LENS_FOCUS_DISTANCE;
-import static java.security.AccessController.getContext;
 
 import android.Manifest.permission;
 import android.annotation.SuppressLint;
@@ -50,14 +45,12 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.CamcorderProfile;
 import android.media.MediaCodec;
 import android.media.MediaRecorder;
-import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.provider.Settings;
-import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.util.Size;
 import android.view.Gravity;
@@ -72,7 +65,6 @@ import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.provider.Settings.Secure;
 
 import com.googleresearch.capturesync.softwaresync.CSVLogger;
 import com.googleresearch.capturesync.softwaresync.SoftwareSyncLeader;
@@ -131,10 +123,11 @@ import androidx.appcompat.app.AppCompatActivity;
  */
 public class MainActivity extends Activity {
     private static final String TAG = "MainActivity";
-    private static final int STATIC_LEN = 15_000;
     private static final int REC_QUALITY = CamcorderProfile.QUALITY_1080P ;
     private static final int REC_BITRATE = 10*1000*1000;
     private static final int REC_FPS = 30;
+    private static final String REC_SUBDIR_NAME = "RecSync";
+
 
     private String lastTimeStamp;
     private PeriodCalculator periodCalculator;
@@ -161,23 +154,11 @@ public class MainActivity extends Activity {
 
     private Integer lastVideoSeqId;
 
-    public int getCurSequence() {
-        return curSequence;
-    }
-
-//    public void setLogger(CSVLogger mLogger) {
-//        this.mLogger = mLogger;
-//    }
-
     public CSVLogger getLogger() {
         return mLogger;
     }
 
     private CSVLogger mLogger;
-
-    private int curSequence;
-
-    private static final String SUBDIR_NAME = "RecSync";
 
     private boolean permissionsGranted = false;
     private boolean isAutofocusStarted = false;
@@ -209,9 +190,7 @@ public class MainActivity extends Activity {
     private Button captureStillButton;
     private Button getPeriodButton;
     private Button phaseAlignButton;
-    private Button makeFocusButton;
-    private Button unlockFocusButton;
-    private TextView focusDistanceTextView ;
+    private Button toggleFocusButton;
     private SeekBar exposureSeekBar;
     private SeekBar sensitivitySeekBar;
     private TextView statusTextView;
@@ -526,7 +505,7 @@ public class MainActivity extends Activity {
                 ((SoftwareSyncLeader) softwareSyncController.softwareSync)
                         .broadcastRpc(SoftwareSyncController.METHOD_START_FOCUS,"");
 
-                makeFocusButton.setText("Stop Autofocus");
+                toggleFocusButton.setText("Stop Autofocus");
                 break;
 
             case "STOP_AUTOFOCUS":
@@ -537,7 +516,7 @@ public class MainActivity extends Activity {
                 ((SoftwareSyncLeader) softwareSyncController.softwareSync)
                         .broadcastRpc(SoftwareSyncController.METHOD_STOP_FOCUS,"");
 
-                makeFocusButton.setText("Start Autofocus");
+                toggleFocusButton.setText("Start Autofocus");
                 break ;
         }
     }
@@ -643,8 +622,7 @@ public class MainActivity extends Activity {
             // Leader, all controls visible and set.
             captureStillButton.setVisibility(View.VISIBLE);
             phaseAlignButton.setVisibility(View.VISIBLE);
-            makeFocusButton.setVisibility(View.VISIBLE);
-            focusDistanceTextView.setVisibility(View.VISIBLE);
+            toggleFocusButton.setVisibility(View.VISIBLE);
 
             getPeriodButton.setVisibility(View.VISIBLE);
             exposureSeekBar.setVisibility(View.VISIBLE);
@@ -707,16 +685,16 @@ public class MainActivity extends Activity {
                                 .broadcastRpc(SoftwareSyncController.METHOD_DO_PHASE_ALIGN, "");
                     });
 
-            makeFocusButton.setOnClickListener(
+            toggleFocusButton.setOnClickListener(
                     view -> {
                            if (isAutofocusStarted) {
                                 stopAutofocus();
-                                makeFocusButton.setText("Start Autofocus");
+                                toggleFocusButton.setText("Start Autofocus");
                                ((SoftwareSyncLeader) softwareSyncController.softwareSync)
                                        .broadcastRpc(SoftwareSyncController.METHOD_STOP_FOCUS,"");
                             } else {
                                 startAutofocus();
-                                makeFocusButton.setText("Stop Autofocus");
+                                toggleFocusButton.setText("Stop Autofocus");
                                ((SoftwareSyncLeader) softwareSyncController.softwareSync)
                                        .broadcastRpc(SoftwareSyncController.METHOD_START_FOCUS,"");
                             }
@@ -789,8 +767,7 @@ public class MainActivity extends Activity {
             getPeriodButton.setVisibility(View.VISIBLE);
             exposureSeekBar.setVisibility(View.INVISIBLE);
             sensitivitySeekBar.setVisibility(View.INVISIBLE);
-            makeFocusButton.setVisibility(View.INVISIBLE);
-            focusDistanceTextView.setVisibility(View.VISIBLE);
+            toggleFocusButton.setVisibility(View.INVISIBLE);
 
             captureStillButton.setOnClickListener(null);
             phaseAlignButton.setOnClickListener(null);
@@ -1047,7 +1024,7 @@ public class MainActivity extends Activity {
         // Controls.
         captureStillButton = findViewById(R.id.capture_still_button);
         phaseAlignButton = findViewById(R.id.phase_align_button);
-        makeFocusButton = findViewById(R.id.make_focus_button);
+        toggleFocusButton = findViewById(R.id.make_focus_button);
 
         getPeriodButton = findViewById(R.id.get_period_button);
 
@@ -1256,7 +1233,7 @@ public class MainActivity extends Activity {
 
         File sdcard = Environment.getExternalStorageDirectory();
 
-        Path dir = Files.createDirectories(Paths.get(sdcard.getAbsolutePath(), SUBDIR_NAME, "VID"));
+        Path dir = Files.createDirectories(Paths.get(sdcard.getAbsolutePath(), REC_SUBDIR_NAME, "VID"));
 
         lastTimeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss",
                 Locale.getDefault()).format(new Date());
@@ -1471,7 +1448,7 @@ public class MainActivity extends Activity {
             String filename = prefixText+"_"+lastTimeStamp + ".csv";
             // Creates frame timestamps logger
             try {
-                mLogger = new CSVLogger(SUBDIR_NAME, filename, this);
+                mLogger = new CSVLogger(REC_SUBDIR_NAME, filename, this);
             } catch (IOException e) {
                 e.printStackTrace();
             }
