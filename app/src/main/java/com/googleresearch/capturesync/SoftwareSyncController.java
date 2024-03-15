@@ -277,6 +277,8 @@ public class SoftwareSyncController implements Closeable {
                                                     String.format(
                                                             "Client %s\n-Synced to Leader %s",
                                                             softwareSync.getName(), softwareSync.getLeaderAddress()))));
+
+
             softwareSync = new SoftwareSyncClient(name, localAddress, leaderAddress, clientRpcs);
         }
 

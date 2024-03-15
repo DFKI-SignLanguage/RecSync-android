@@ -219,6 +219,8 @@ public class MainActivity extends Activity {
     private TextView softwaresyncStatusTextView;
     private TextView phaseTextView;
     private Float currentFocusDistance = 0.0f;
+    private TextView hiddenFocusTextView;
+
 
     // Local variables tracking current manual exposure and sensitivity values.
     private long currentSensorExposureTimeNs = seekBarValueToExposureNs(10);
@@ -1040,6 +1042,7 @@ public class MainActivity extends Activity {
         sensorExposureTextView = findViewById(R.id.sensor_exposure);
         sensorSensitivityTextView = findViewById(R.id.sensor_sensitivity);
         phaseTextView = findViewById(R.id.phase);
+        hiddenFocusTextView = findViewById(R.id.hidden_focus_text_view);
 
         // Controls.
         captureStillButton = findViewById(R.id.capture_still_button);

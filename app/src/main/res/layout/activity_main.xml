@@ -105,11 +105,19 @@
                 android:layout_height="wrap_content"
                 android:max="20"
                 android:progress="3" />
+
             <Button
                 android:id="@+id/make_focus_button"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Start Autofocus"/>
+
+            <TextView
+                android:id="@+id/hidden_focus_text_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="FocusTextView"
+                android:visibility="invisible" />
 
         </LinearLayout>
 
