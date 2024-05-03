@@ -309,7 +309,7 @@ public class SoftwareSyncController implements Closeable {
                 () -> {
                     StringBuilder msg = new StringBuilder();
                     msg.append(
-                            String.format("Leader %s: %d clients.\n", softwareSync.getName(), clientCount));
+                            String.format("Leader %s: %d clients. FD:%s\n", softwareSync.getName(), clientCount, Float.toString(MainActivity.getCurrentFocusDistanceStatic())));
                     for (Entry<InetAddress, ClientInfo> entry : leader.getClients().entrySet()) {
                         ClientInfo client = entry.getValue();
                         if (client.syncAccuracy() == 0) {
@@ -317,7 +317,7 @@ public class SoftwareSyncController implements Closeable {
                         } else {
                             msg.append(
                                     String.format(
-                                            "-Client %s: %.2f ms sync\n", client.name(), client.syncAccuracy() / 1e6));
+                                            "-Client %s: %.2f ms sync FD:%s\n", client.name(), client.syncAccuracy() / 1e6, client.focusDistance()));
                         }
                     }
                     statusView.setText(msg.toString());

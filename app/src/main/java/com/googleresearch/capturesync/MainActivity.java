@@ -75,7 +75,9 @@ import android.widget.Toast;
 import android.provider.Settings.Secure;
 
 import com.googleresearch.capturesync.softwaresync.CSVLogger;
+import com.googleresearch.capturesync.softwaresync.ClientInfo;
 import com.googleresearch.capturesync.softwaresync.SoftwareSyncLeader;
+import com.googleresearch.capturesync.softwaresync.SyncConstants;
 import com.googleresearch.capturesync.softwaresync.TimeUtils;
 import com.googleresearch.capturesync.softwaresync.phasealign.PeriodCalculator;
 import com.googleresearch.capturesync.softwaresync.phasealign.PhaseConfig;
@@ -84,6 +86,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -219,6 +222,7 @@ public class MainActivity extends Activity {
     private TextView softwaresyncStatusTextView;
     private TextView phaseTextView;
     private Float currentFocusDistance = 0.0f;
+    private static Float currentFocusDistanceStatic = 2.0f;
     private TextView hiddenFocusTextView;
 
 
@@ -429,6 +433,8 @@ public class MainActivity extends Activity {
         surfaceView.setVisibility(View.VISIBLE);
 
         startCameraThread();
+        ((SoftwareSyncLeader) softwareSyncController.softwareSync)
+                .broadcastRpc(SyncConstants.METHOD_MSG_SYNCING,"");
 
 
 
@@ -538,10 +544,13 @@ public class MainActivity extends Activity {
                 ((SoftwareSyncLeader) softwareSyncController.softwareSync)
                         .broadcastRpc(SoftwareSyncController.METHOD_STOP_FOCUS,"");
 
+
+
                 makeFocusButton.setText("Start Autofocus");
                 break ;
         }
     }
+
 
     @Override
     public void onPause() {
@@ -1185,10 +1194,14 @@ public class MainActivity extends Activity {
 
     public void setCurrentFocusDistance(float cfd){
         currentFocusDistance = cfd;
+        currentFocusDistanceStatic = cfd;
     }
 
     public Float getCurrentFocusDistance(){
         return currentFocusDistance;
+    }
+    public static Float getCurrentFocusDistanceStatic(){
+        return currentFocusDistanceStatic;
     }
 
     private int clamp(int value, int min, int max) {

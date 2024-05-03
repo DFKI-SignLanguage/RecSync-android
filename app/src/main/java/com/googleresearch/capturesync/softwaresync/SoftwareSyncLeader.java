@@ -119,7 +119,7 @@ public class SoftwareSyncLeader extends SoftwareSyncBase {
    * clients. If so, just update the last heartbeat, otherwise create a new client entry in the
    * list.
    */
-  private void addOrUpdateClient(String name, InetAddress address) {
+  private void addOrUpdateClient(String name, InetAddress address, String fD) {
     // Check if it's a new client, so we don't add again.
     synchronized (clientsLock) {
       boolean clientExists = clients.containsKey(address);
@@ -129,9 +129,10 @@ public class SoftwareSyncLeader extends SoftwareSyncBase {
       if (clientExists) {
         offsetNs = clients.get(address).offset();
         syncAccuracyNs = clients.get(address).syncAccuracy();
+        fD = clients.get(address).focusDistance();
       }
       ClientInfo updatedClient =
-          ClientInfo.create(name, address, offsetNs, syncAccuracyNs, localClock.read());
+          ClientInfo.create(name, address, offsetNs, syncAccuracyNs, localClock.read(), fD);
       clients.put(address, updatedClient);
 
       if (!clientExists) {
@@ -181,7 +182,8 @@ public class SoftwareSyncLeader extends SoftwareSyncBase {
               client.address(),
               response.offsetNs(),
               response.syncAccuracyNs(),
-              client.lastHeartbeat());
+              client.lastHeartbeat(),
+              client.focusDistance());
       clients.put(client.address(), updatedClient);
     }
   }
@@ -245,10 +247,10 @@ public class SoftwareSyncLeader extends SoftwareSyncBase {
    */
   private void processHeartbeatRpc(String payload) throws UnknownHostException {
     List<String> parts = Arrays.asList(payload.split(","));
-    if (parts.size() != 3) {
+    if (parts.size() != 4) {
       Log.e(
           TAG,
-          "Heartbeat message has the wrong format, expected 3 comma-delimitted parts: "
+          "Heartbeat message has the wrong format, expected 4 comma-delimitted parts: "
               + payload
               + ". Skipping.");
       return;
@@ -256,12 +258,13 @@ public class SoftwareSyncLeader extends SoftwareSyncBase {
     String clientName = parts.get(0);
     InetAddress clientAddress = InetAddress.getByName(parts.get(1));
     boolean clientSyncState = Boolean.parseBoolean(parts.get(2));
+    String fD = parts.get(3);
 
     // Send heartbeat acknowledge RPC back to client first, containing the same payload.
     sendRpc(SyncConstants.METHOD_HEARTBEAT_ACK, payload, clientAddress);
 
     // Add or update client in clients.
-    addOrUpdateClient(clientName, clientAddress);
+    addOrUpdateClient(clientName, clientAddress, fD);
 
     // If the client state is not yet synchronized, add it to the SNTP queue.
     if (!clientSyncState) {

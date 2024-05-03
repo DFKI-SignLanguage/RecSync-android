@@ -18,6 +18,8 @@ package com.googleresearch.capturesync.softwaresync;
 
 import android.provider.Settings;
 
+import com.googleresearch.capturesync.MainActivity;
+
 import java.net.InetAddress;
 
 /**
@@ -30,24 +32,26 @@ public final class ClientInfo {
   private final long offsetNs;
   private final long syncAccuracyNs;
   private final long lastHeartbeatNs;
+  private final String focusDistance;
 
   static ClientInfo create(
-      String name, InetAddress address, long offset, long syncAccuracy, long lastHeartbeat) {
-    return new ClientInfo(name, address, offset, syncAccuracy, lastHeartbeat);
+      String name, InetAddress address, long offset, long syncAccuracy, long lastHeartbeat, String focusDistance) {
+    return new ClientInfo(name, address, offset, syncAccuracy, lastHeartbeat, focusDistance);
   }
 
-  static ClientInfo create(String name, InetAddress address) {
+  static ClientInfo create(String name, InetAddress address, String focusDistance) {
     return new ClientInfo(
-        name, address, /*offsetNs=*/ 0, /*syncAccuracyNs=*/ 0, /*lastHeartbeatNs=*/ 0);
+        name, address, /*offsetNs=*/ 0, /*syncAccuracyNs=*/ 0, /*lastHeartbeatNs=*/ 0, focusDistance);
   }
 
   private ClientInfo(
-      String name, InetAddress address, long offsetNs, long syncAccuracyNs, long lastHeartbeatNs) {
+      String name, InetAddress address, long offsetNs, long syncAccuracyNs, long lastHeartbeatNs, String fD) {
     this.name = name;
     this.address = address;
     this.offsetNs = offsetNs;
     this.syncAccuracyNs = syncAccuracyNs;
     this.lastHeartbeatNs = lastHeartbeatNs;
+    this.focusDistance = fD;
   }
 
   public String name() {
@@ -78,6 +82,8 @@ public final class ClientInfo {
   public long lastHeartbeat() {
     return lastHeartbeatNs;
   }
+
+  public String focusDistance(){return focusDistance; }
 
   @Override
   public String toString() {

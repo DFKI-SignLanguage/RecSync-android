@@ -117,7 +117,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="FocusTextView"
-                android:visibility="invisible" />
+                android:visibility="gone" />
 
         </LinearLayout>
 

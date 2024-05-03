@@ -35,6 +35,9 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import android.provider.Settings.Secure;
+
+import com.googleresearch.capturesync.MainActivity;
+
 /**
  * SoftwareSyncBase is the abstract base class to SoftwareSyncLeader and SoftwareSyncClient, holding
  * shared objects such as UDP ports and sockets, local client information and methods for starting
@@ -72,7 +75,8 @@ public abstract class SoftwareSyncBase implements Closeable, TimeDomainConverter
     this.localClock = localClock;
 
     // Set up local ClientInfo from the provided address.
-    localClientInfo = ClientInfo.create(name, address);
+    Float fD =  MainActivity.getCurrentFocusDistanceStatic();
+    localClientInfo = ClientInfo.create(name, address, Float.toString(fD));
 
     // Leader device ip address is provided by the user.
     this.leaderAddress = leaderAddress;
@@ -126,6 +130,8 @@ public abstract class SoftwareSyncBase implements Closeable, TimeDomainConverter
   public String getName() {
     return localClientInfo.name();
   }
+
+  public String getFocusDistance(){ return Float.toString(MainActivity.getCurrentFocusDistanceStatic());}
 
   ClientInfo getLocalClientInfo() {
     return localClientInfo;

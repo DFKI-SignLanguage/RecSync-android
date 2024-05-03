@@ -17,6 +17,9 @@
 package com.googleresearch.capturesync.softwaresync;
 
 import android.util.Log;
+
+import com.googleresearch.capturesync.MainActivity;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Map;
@@ -136,12 +139,15 @@ public class SoftwareSyncClient extends SoftwareSyncBase {
     final String heartbeatMsg;
     synchronized (syncLock) {
       // Note: Send messages using strings for simplicity.
+//      MainActivity m = new MainActivity();
+
       heartbeatMsg =
           String.format(
-              "%s,%s,%s",
+              "%s,%s,%s,%s",
               getLocalClientInfo().name(),
               getLocalClientInfo().address().getHostAddress(),
-              Boolean.toString(synced));
+              Boolean.toString(synced),
+              getFocusDistance());
     }
 
     // Send heartbeat RPC to leader, expecting a METHOD_HEARTBEAT_ACK rpc back from leader.
