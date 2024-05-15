@@ -17,6 +17,7 @@
 
 package com.googleresearch.capturesync;
 
+import static android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_AUTO;
 import static android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_OFF;
 import static android.hardware.camera2.CameraMetadata.CONTROL_AF_TRIGGER_CANCEL;
 import static android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE;
@@ -162,6 +163,7 @@ public class MainActivity extends Activity {
 
     private boolean permissionsGranted = false;
     private boolean isAutofocusStarted = false;
+    private boolean isAutofocusStopped = false;
     // Phase config file to use for phase alignment, configs are located in the raw folder.
     private final int phaseConfigFile = R.raw.default_phaseconfig;
 
@@ -1198,9 +1200,20 @@ public class MainActivity extends Activity {
                                     cameraController.getOutputSurfaces(),
                                     currentSensorExposureTimeNs,
                                     currentSensorSensitivity, wantAutoExp, false);
-//           previewRequestBuilder.set(CONTROL_AF_MODE, CONTROL_AF_MODE_OFF);
-            previewRequestBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, getCurrentFocusDistance());
-            captureSession.stopRepeating();
+//           previewRequestBuilder.set(CONTROL_AF_MODE, CONTROL_AF_MODE_AUTO);
+//            previewRequestBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, getCurrentFocusDistance());
+            if(isAutofocusStarted == true && isAutofocusStopped == false){
+                Rect focusAreaRect = calculateFocusRect();
+
+                // Set the focus area and focus mode
+                previewRequestBuilder.set(CaptureRequest.CONTROL_AF_REGIONS, new MeteringRectangle[]{new MeteringRectangle(focusAreaRect, 1000)});
+                previewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CONTROL_AF_MODE_AUTO);
+
+                // Trigger a single autofocus operation
+                previewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START);
+            }else{
+                previewRequestBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, getCurrentFocusDistance());
+            }
             captureSession.setRepeatingRequest(
                     previewRequestBuilder.build(),
                     cameraController.getSynchronizerCaptureCallback(),
@@ -1316,6 +1329,7 @@ public class MainActivity extends Activity {
     public void startAutofocus(){
         try {
             isAutofocusStarted = true;
+            isAutofocusStopped = false;
             CaptureRequest.Builder previewRequestBuilder =
                     cameraController
                             .getRequestFactory()
@@ -1328,7 +1342,7 @@ public class MainActivity extends Activity {
 
             // Set the focus area and focus mode
             previewRequestBuilder.set(CaptureRequest.CONTROL_AF_REGIONS, new MeteringRectangle[]{new MeteringRectangle(focusAreaRect, 1000)});
-            previewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO);
+            previewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CONTROL_AF_MODE_AUTO);
 
             // Trigger a single autofocus operation
             previewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START);
@@ -1350,6 +1364,7 @@ public class MainActivity extends Activity {
     public void stopAutofocus(){
         try {
             isAutofocusStarted = false;
+            isAutofocusStopped = true;
             CaptureRequest.Builder previewRequestBuilder =
                     cameraController
                             .getRequestFactory()
@@ -1467,7 +1482,18 @@ public class MainActivity extends Activity {
 
 
             captureSession.stopRepeating();
-            previewRequestBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, getCurrentFocusDistance());
+            if(isAutofocusStarted == true && isAutofocusStopped == false){
+                Rect focusAreaRect = calculateFocusRect();
+
+                // Set the focus area and focus mode
+                previewRequestBuilder.set(CaptureRequest.CONTROL_AF_REGIONS, new MeteringRectangle[]{new MeteringRectangle(focusAreaRect, 1000)});
+                previewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CONTROL_AF_MODE_AUTO);
+
+                // Trigger a single autofocus operation
+                previewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START);
+            }else{
+                previewRequestBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, getCurrentFocusDistance());
+            }
             mediaRecorder.start();
             lastVideoSeqId = captureSession.setRepeatingRequest(
                     previewRequestBuilder.build(),
@@ -1482,6 +1508,9 @@ public class MainActivity extends Activity {
 
     public void stopVideo() {
         // Switch to preview again
+//        if(isAutofocusStarted==true) {
+//            stopAutofocus();
+//        }
         isVideoRecording = false;
         mediaRecorder.stop();
         mLogger.close();
