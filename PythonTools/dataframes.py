@@ -137,7 +137,7 @@ def scan_session_dir(input_dir: Path) -> Tuple[List[str], List[pd.DataFrame], Li
     using the same session ID, and this must be manually cleaned up.
     """
     # Use the following regular expression to check of the client ID is a 16-digit hexadecimal.
-    clientIDpattern = "[\\da-f]" * 16
+    clientIDpattern = "[\\da-fA-F]" * 16
     patt = re.compile("^" + clientIDpattern + "$")
 
     # Fill this list with the client IDs found n the directory
