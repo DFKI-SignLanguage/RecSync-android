@@ -139,7 +139,7 @@ Using the Remote Controller (life is easier when sitting at your desk):
 3. On the Remote Controller, set the `Exposure` and `Sensitivity` parameters and click `Send`.
 4. Start the autofocus to let the camera focus on your target. Stop the autofocus to fix the recording focal length.
 5. **Important** before the first recording, and to repeat maybe every couple of minutes, click `Align Phases`. This will ask each device to synchronize the shutters and record in synch.
-  * **Important** Wait for 5 seconds for the alignment to finish. There is no feedback for the alignment to be completed, so if you start recording when the alignment is still in progress, your videos might be misaligned!
+   * **Important** Wait for 5 seconds for the alignment to finish. There is no feedback for the alignment to be completed, so if you start recording when the alignment is still in progress, your videos might be misaligned!
 6. Click `Record` to ask all devices to start recording.
 7. Click `Stop` to stop your recording.
 8. Click `Download` to receive on the local machine all the videos starting with the given `prefix`. 
