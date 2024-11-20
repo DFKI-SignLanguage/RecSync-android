@@ -50,6 +50,22 @@ def post_process(input_dir: Path, output_dir: Path, threshold_ns: int = DEFAULT_
     # Trim CSVs
     # Find time ranges
     min_common, max_common = compute_time_range(repaired_df_list)
+
+    # Anomaly. This can happen if a timer was completely out of sync
+    if min_common >= max_common:
+        print("min_common is larger than max_common.")
+        m_min = repaired_df_list[0]['timestamp'][0]
+        m_max = repaired_df_list[0]['timestamp'].iloc[-1]
+        print(f"Time range for client {clientIDs[0]}: {m_min} -- {m_max}")
+        for i in range(1, n_clients):
+            c_min = repaired_df_list[i]['timestamp'][0]
+            c_max =  repaired_df_list[i]['timestamp'].iloc[-1]
+            # Report the difference between the min/max of the current client and the master device
+            diff_min = c_min - m_min
+            diff_max = c_max - m_max
+            print(f"For client {clientIDs[i]} differences are {diff_min} / {diff_max}")
+        raise Exception(f"min_common {min_common} is larger than max_common {max_common}")
+
     # Trim the data frames to the time range
     trimmed_dataframes = trim_repaired_into_interval(repaired_df_list, min_common, max_common, threshold_ns)
 
